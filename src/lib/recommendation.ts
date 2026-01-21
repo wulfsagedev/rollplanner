@@ -122,12 +122,12 @@ const INTENT_MODIFIERS: Record<Intent, {
     latitudeBonus: 1,
     description: 'texture and feeling'
   },
-  documentary: {
+  travel: {
     saturationBonus: 0,
     contrastBonus: 0,
     grainTolerance: 1,
     latitudeBonus: 2,
-    description: 'honest, forgiving exposure'
+    description: 'versatile, forgiving exposure'
   },
   narrative: {
     saturationBonus: 0,
@@ -623,7 +623,7 @@ export function getMeteringTips(
       tips.secondary = 'Even light is forgiving. Trust your meter reading.';
     }
   } else if (light === 'dim' || light === 'dark') {
-    if (intent === 'documentary' || intent === 'narrative') {
+    if (intent === 'travel' || intent === 'narrative') {
       tips.secondary = 'Push processing can recover 1-2 stops if needed.';
     } else {
       tips.secondary = 'Bracket exposures. Err on the side of overexposure.';
@@ -652,7 +652,7 @@ export const DISCIPLINES: Record<Intent, string> = {
   calm: 'Slow down. Wait for stillness.',
   graphic: 'Find the geometry. Commit to the frame.',
   emotional: 'Follow the feeling, not the subject.',
-  documentary: "Stay present. Don't chase moments.",
+  travel: 'Stay curious. Let places reveal themselves.',
   narrative: 'Every frame tells part of the story.',
   abstract: 'Break the rules. Trust your eye.'
 };

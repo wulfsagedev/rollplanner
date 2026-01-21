@@ -24,7 +24,7 @@ import {
   MinimalIcon,
   GraphicIcon,
   ExpressiveIcon,
-  DocumentaryIcon,
+  TravelIcon,
   NarrativeIcon,
   AbstractIcon,
   ExposureIcon,
@@ -142,7 +142,7 @@ export default function Home() {
                 { value: 'calm', label: 'Minimal', icon: MinimalIcon },
                 { value: 'graphic', label: 'Graphic', icon: GraphicIcon },
                 { value: 'emotional', label: 'Expressive', icon: ExpressiveIcon },
-                { value: 'documentary', label: 'Document', icon: DocumentaryIcon },
+                { value: 'travel', label: 'Travel', icon: TravelIcon },
                 { value: 'narrative', label: 'Narrative', icon: NarrativeIcon },
                 { value: 'abstract', label: 'Abstract', icon: AbstractIcon }
               ] as const).map(({ value, label, icon: Icon }) => (
@@ -180,6 +180,32 @@ export default function Home() {
               ← Back
             </button>
             <h2 className="screen-title">Your Roll</h2>
+          </div>
+
+          {/* Settings Summary */}
+          <div className="settings-summary">
+            <div className="settings-summary-item">
+              <div className="settings-summary-label">Light</div>
+              <div className="settings-summary-value">{state.light}</div>
+            </div>
+            <div className="settings-summary-item">
+              <div className="settings-summary-label">Environment</div>
+              <div className="settings-summary-value">{state.environment}</div>
+            </div>
+            <div className="settings-summary-item">
+              <div className="settings-summary-label">Intent</div>
+              <div className="settings-summary-value">{state.intent}</div>
+            </div>
+            <div className="settings-summary-item">
+              <div className="settings-summary-label">Format</div>
+              <div className="settings-summary-value">{state.filmFormat} {state.filmType === 'color' ? 'Colour' : 'B&W'}</div>
+            </div>
+            {weather && (
+              <div className="settings-summary-item full-width">
+                <div className="settings-summary-label">Conditions</div>
+                <div className="settings-summary-value">{weather.conditions} · {weather.lightQuality}</div>
+              </div>
+            )}
           </div>
 
           {/* Film Card */}

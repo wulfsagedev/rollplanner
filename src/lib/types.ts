@@ -4,7 +4,7 @@
 
 export type LightCondition = 'harsh' | 'bright' | 'mixed' | 'flat' | 'dim' | 'dark';
 export type Environment = 'portrait' | 'street' | 'architecture' | 'interiors' | 'landscape' | 'nature';
-export type Intent = 'calm' | 'graphic' | 'emotional' | 'documentary' | 'narrative' | 'abstract';
+export type Intent = 'calm' | 'graphic' | 'emotional' | 'travel' | 'narrative' | 'abstract';
 export type FilmType = 'color' | 'bw';
 export type FilmFormat = '35mm' | '120';
 
