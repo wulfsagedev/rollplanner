@@ -89,9 +89,15 @@ export default function Home() {
   const weather = isPlanning && plannedWeather ? plannedWeather : currentWeather;
 
   // Apply time-of-day theme when planning
+  // Time-of-day themes temporarily override the user's theme preference
   useEffect(() => {
     const html = document.documentElement;
     const timeClasses = ['time-sunrise', 'time-golden', 'time-blue-hour', 'time-night'];
+
+    // Get user's saved theme preference
+    const savedTheme = localStorage.getItem('rollplanner_theme');
+    const userPrefersDark = savedTheme === 'dark' ||
+      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     // Add transition for smooth theme changes
     html.classList.add('theme-transitioning');
@@ -99,13 +105,21 @@ export default function Home() {
     // Remove all time classes first
     timeClasses.forEach(cls => html.classList.remove(cls));
 
-    // Night is special - it activates actual dark mode
     if (timeOfDay === 'night') {
+      // Night uses actual dark mode
       html.classList.add('dark');
-      localStorage.setItem('rollplanner_theme', 'dark');
     } else if (timeOfDay) {
-      // Apply time-of-day class for other times
+      // Other time-of-day themes temporarily override dark mode
+      // Remove dark class while previewing daytime themes
+      html.classList.remove('dark');
       html.classList.add(`time-${timeOfDay}`);
+    } else {
+      // No time-of-day selected - restore user's theme preference
+      if (userPrefersDark) {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
     }
 
     // Remove transition class after animation

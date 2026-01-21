@@ -176,7 +176,7 @@ function getShootingNote(
   if (weatherCode >= 45) return 'Fog creates depth and mood. Increase exposure +1 stop.';
 
   // Night
-  if (sunPosition === 'night') return 'Use fast film or push. Tripod recommended for sharp images.';
+  if (sunPosition === 'night') return 'Use fast film or push. Tripod recommended.';
 
   // Twilight
   if (sunPosition === 'twilight') return 'Blue hour magic. Meter carefully, bracket if unsure.';
