@@ -184,9 +184,9 @@ export default function Home() {
             <div className="selector-label">Light</div>
             <div className="selector-options">
               {([
-                { value: 'harsh', label: 'High Sun', icon: HarshLightIcon },
-                { value: 'bright', label: 'Bright', icon: BrightLightIcon },
-                { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
+                { value: 'harsh', label: 'Midday', icon: HarshLightIcon },
+                { value: 'bright', label: 'Golden', icon: BrightLightIcon },
+                { value: 'mixed', label: 'Soft', icon: MixedLightIcon },
                 { value: 'flat', label: 'Overcast', icon: FlatLightIcon },
                 { value: 'dim', label: 'Blue Hour', icon: DimLightIcon },
                 { value: 'dark', label: 'Night', icon: DarkLightIcon }

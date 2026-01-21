@@ -19,15 +19,16 @@ function formatTime(date: Date): string {
 
 // Time slot configuration with photography-focused descriptions
 // timeOfDay controls dynamic theme: sunrise, golden, day, blue-hour, night
+// Labels sync with Light selector: Midday, Golden, Soft, Overcast, Blue Hour, Night
 const TIME_SLOTS = [
-  { key: 'sunrise', label: 'Sunrise', desc: 'First Light', timeOfDay: 'sunrise' as TimeOfDay },
-  { key: 'goldenMorning', label: 'Golden AM', desc: 'Warm Tones', timeOfDay: 'golden' as TimeOfDay },
-  { key: 'midMorning', label: 'Morning', desc: 'Soft Light', timeOfDay: 'day' as TimeOfDay },
-  { key: 'midday', label: 'Midday', desc: 'High Sun', timeOfDay: 'day' as TimeOfDay },
-  { key: 'midAfternoon', label: 'Afternoon', desc: 'Angled Light', timeOfDay: 'day' as TimeOfDay },
-  { key: 'goldenEvening', label: 'Golden PM', desc: 'Warm Tones', timeOfDay: 'golden' as TimeOfDay },
-  { key: 'twilight', label: 'Blue Hour', desc: 'Cool Tones', timeOfDay: 'blue-hour' as TimeOfDay },
-  { key: 'night', label: 'Night', desc: 'Low Light', timeOfDay: 'night' as TimeOfDay },
+  { key: 'sunrise', label: 'Sunrise', desc: 'Soft warm light', timeOfDay: 'sunrise' as TimeOfDay },
+  { key: 'goldenMorning', label: 'Golden', desc: 'Warm directional', timeOfDay: 'golden' as TimeOfDay },
+  { key: 'midMorning', label: 'Soft', desc: 'Morning soft', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midday', label: 'Midday', desc: 'High contrast', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midAfternoon', label: 'Soft', desc: 'Afternoon soft', timeOfDay: 'day' as TimeOfDay },
+  { key: 'goldenEvening', label: 'Golden', desc: 'Warm directional', timeOfDay: 'golden' as TimeOfDay },
+  { key: 'twilight', label: 'Blue Hour', desc: 'Cool ambient', timeOfDay: 'blue-hour' as TimeOfDay },
+  { key: 'night', label: 'Night', desc: 'Low light', timeOfDay: 'night' as TimeOfDay },
 ] as const;
 
 export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange }: ShootPlannerProps) {
