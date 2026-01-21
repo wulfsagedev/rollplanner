@@ -180,7 +180,7 @@ export default function Home() {
                 {state.recommendation.film}
               </div>
               <div className="text-sm font-medium tracking-wider uppercase text-[var(--led-on)] mb-5">
-                Rate at EI {state.recommendation.ei}
+                ISO {state.recommendation.ei}
               </div>
 
               <div className="h-px bg-white/15 my-5" />
@@ -210,7 +210,7 @@ export default function Home() {
                 >
                   <GuidanceRow label="Aperture" value={exposure.aperture} />
                   <GuidanceRow label="Shutter" value={exposure.shutter} />
-                  <GuidanceRow label="EI" value={state.recommendation.ei.toString()} />
+                  <GuidanceRow label="ISO" value={state.recommendation.ei.toString()} />
                 </GuidanceCard>
               );
             })()}
@@ -258,7 +258,7 @@ export default function Home() {
                 {state.recommendation.film}
               </div>
               <div className="text-sm font-medium tracking-wider uppercase text-[var(--led-on)]">
-                EI {state.recommendation.ei}
+                ISO {state.recommendation.ei}
               </div>
             </div>
 

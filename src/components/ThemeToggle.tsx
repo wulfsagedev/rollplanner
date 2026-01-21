@@ -20,6 +20,45 @@ export function ThemeToggle() {
       setTheme('dark');
       document.documentElement.classList.add('dark');
     }
+
+    // Preload both themes by briefly toggling dark class
+    // This forces browser to compute styles for both themes upfront
+    const preloadThemes = () => {
+      const html = document.documentElement;
+      const currentlyDark = html.classList.contains('dark');
+
+      // Temporarily disable transitions
+      html.style.transition = 'none';
+
+      // Toggle to opposite theme briefly
+      if (currentlyDark) {
+        html.classList.remove('dark');
+      } else {
+        html.classList.add('dark');
+      }
+
+      // Force style recalculation
+      void html.offsetHeight;
+
+      // Toggle back
+      if (currentlyDark) {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+
+      // Force another recalculation
+      void html.offsetHeight;
+
+      // Re-enable transitions
+      requestAnimationFrame(() => {
+        html.style.transition = '';
+      });
+    };
+
+    // Run preload after a short delay to not block initial render
+    const timer = setTimeout(preloadThemes, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleTheme = () => {

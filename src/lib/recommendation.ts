@@ -209,21 +209,37 @@ export function getRecommendation(
 
 // ============================================
 // EXPOSURE GUIDANCE
-// Sunny 16 variations
+// Sunny 16 variations with standard camera increments
 // ============================================
+
+// Standard shutter speeds found on most film cameras
+const STANDARD_SHUTTERS = [1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000, 2000, 4000];
+
+// Standard apertures (full stops)
+const STANDARD_APERTURES = ['f/1.4', 'f/2', 'f/2.8', 'f/4', 'f/5.6', 'f/8', 'f/11', 'f/16', 'f/22'];
+
+// Find nearest standard shutter speed
+function nearestShutter(target: number): string {
+  const nearest = STANDARD_SHUTTERS.reduce((prev, curr) =>
+    Math.abs(curr - target) < Math.abs(prev - target) ? curr : prev
+  );
+  return `1/${nearest}`;
+}
 
 export function getExposureGuidance(
   light: LightCondition,
-  ei: number,
+  iso: number,
   environment: Environment
 ): ExposureGuidance {
+  // Use standard shutter speeds based on ISO and Sunny 16 rule
+  // Sunny 16: f/16, 1/ISO for bright sun
   const exposureSettings: Record<LightCondition, { aperture: string; shutter: string; note: string }> = {
-    harsh: { aperture: 'f/16', shutter: `1/${ei}`, note: 'Bright sun. Watch for harsh shadows.' },
-    bright: { aperture: 'f/11', shutter: `1/${ei}`, note: 'Open shade or slight overcast.' },
-    mixed: { aperture: 'f/8', shutter: `1/${ei}`, note: 'Variable light. Bracket if unsure.' },
-    flat: { aperture: 'f/5.6', shutter: `1/${ei}`, note: 'Overcast sky. Even, soft light.' },
-    dim: { aperture: 'f/4', shutter: `1/${Math.round(ei / 2)}`, note: 'Low light. Consider a tripod.' },
-    dark: { aperture: 'f/2.8', shutter: `1/${Math.round(ei / 4)}`, note: 'Very low light. Steady hands or support.' }
+    harsh: { aperture: 'f/16', shutter: nearestShutter(iso), note: 'Bright sun. Watch for harsh shadows.' },
+    bright: { aperture: 'f/11', shutter: nearestShutter(iso), note: 'Open shade or slight overcast.' },
+    mixed: { aperture: 'f/8', shutter: nearestShutter(iso), note: 'Variable light. Bracket if unsure.' },
+    flat: { aperture: 'f/5.6', shutter: nearestShutter(iso), note: 'Overcast sky. Even, soft light.' },
+    dim: { aperture: 'f/4', shutter: nearestShutter(iso / 4), note: 'Low light. Consider a tripod.' },
+    dark: { aperture: 'f/2.8', shutter: nearestShutter(iso / 8), note: 'Very low light. Steady hands or support.' }
   };
 
   const settings = { ...exposureSettings[light] };
@@ -233,7 +249,7 @@ export function getExposureGuidance(
     settings.note = 'Interior light. Meter for highlights you want to keep.';
     if (light === 'bright' || light === 'harsh') {
       settings.aperture = 'f/5.6';
-      settings.shutter = `1/${Math.round(ei / 2)}`;
+      settings.shutter = nearestShutter(iso / 4);
     }
   } else if (environment === 'portrait') {
     settings.note = 'Open up for shallow depth. Meter for skin.';
