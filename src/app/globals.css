@@ -1917,7 +1917,7 @@ body::before {
 }
 
 .shoot-planner-forecast.loading {
-  min-height: 80px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1927,20 +1927,59 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 }
 
-/* Pulse animation for loading */
+.shoot-planner-forecast-loading .shoot-planner-loading-text {
+  color: var(--text-light-secondary);
+}
+
+/* Loading state with LED indicator */
+.shoot-planner-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.shoot-planner-loading-led {
+  width: 8px;
+  height: 8px;
+  background: var(--led-on);
+  border-radius: 50%;
+  box-shadow:
+    0 0 4px var(--led-on),
+    0 0 8px var(--led-on-glow);
+  animation: led-pulse 1s ease-in-out infinite;
+}
+
+.shoot-planner-loading-text {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+@keyframes led-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 4px var(--led-on), 0 0 8px var(--led-on-glow);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--led-on), 0 0 12px var(--led-on-glow);
+  }
+}
+
+/* Legacy pulse (remove old) */
 .shoot-planner-pulse {
   width: 8px;
   height: 8px;
   background: var(--led-on);
   border-radius: 50%;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  animation: led-pulse 1s ease-in-out infinite;
 }
 
 .shoot-planner-forecast-header {

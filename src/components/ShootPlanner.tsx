@@ -39,6 +39,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
   const [forecast, setForecast] = useState<WeatherData | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingSunTimes, setIsLoadingSunTimes] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,16 +58,19 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     };
   }), []);
 
-  // Handle location selection - fetch sun times immediately
+  // Handle location selection - fetch sun times immediately with loading state
   const selectLocation = useCallback(async (location: LocationResult) => {
     setSelectedLocation(location);
     setSearchQuery(location.name);
     setShowResults(false);
     setSearchResults([]);
+    setIsLoadingSunTimes(true);
 
-    // Immediately fetch sun times for instant UI update
+    // Fetch sun times for the selected location
     const date = new Date(selectedDate);
     const times = await getSunTimes(location.lat, location.lon, date);
+
+    setIsLoadingSunTimes(false);
     if (times) {
       setSunTimes(times);
       // Auto-select golden evening as default (most popular shoot time)
@@ -129,19 +133,32 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
       return;
     }
 
+    // Skip if we just selected the location (handled in selectLocation)
+    // Only run when date changes for an existing location
+    let isCancelled = false;
+
     const fetchSunTimesData = async () => {
+      setIsLoadingSunTimes(true);
       const date = new Date(selectedDate);
       const times = await getSunTimes(selectedLocation.lat, selectedLocation.lon, date);
-      if (times) {
-        setSunTimes(times);
-        // Keep selected time if still valid, otherwise select golden evening
-        if (!selectedTime) {
-          setSelectedTime(formatTime(times.goldenEvening));
+
+      if (!isCancelled) {
+        setIsLoadingSunTimes(false);
+        if (times) {
+          setSunTimes(times);
+          // Keep selected time if still valid, otherwise select golden evening
+          if (!selectedTime) {
+            setSelectedTime(formatTime(times.goldenEvening));
+          }
         }
       }
     };
 
     fetchSunTimesData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [selectedLocation, selectedDate, selectedTime]);
 
   // Fast forecast fetch - minimal debounce since cache handles repeat requests
@@ -318,8 +335,16 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         </div>
       )}
 
+      {/* Loading state for sun times */}
+      {selectedLocation && isLoadingSunTimes && !sunTimes && (
+        <div className="shoot-planner-loading">
+          <span className="shoot-planner-loading-led" />
+          <span className="shoot-planner-loading-text">Loading times...</span>
+        </div>
+      )}
+
       {/* Time Grid - Clean 4x2 */}
-      {sunTimes && (
+      {sunTimes && !isLoadingSunTimes && (
         <div className="shoot-planner-field">
           <div className="shoot-planner-times-grid">
             {TIME_SLOTS.map(({ key, label }) => {
@@ -345,7 +370,8 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         <div className={`shoot-planner-forecast ${isFetching ? 'loading' : ''}`}>
           {isFetching ? (
             <div className="shoot-planner-forecast-loading">
-              <span className="shoot-planner-pulse" />
+              <span className="shoot-planner-loading-led" />
+              <span className="shoot-planner-loading-text">Loading forecast...</span>
             </div>
           ) : forecast && (
             <>
