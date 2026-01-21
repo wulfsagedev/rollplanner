@@ -92,7 +92,7 @@ export default function Home() {
   // Time-of-day themes temporarily override the user's theme preference
   useEffect(() => {
     const html = document.documentElement;
-    const timeClasses = ['time-sunrise', 'time-golden', 'time-blue-hour', 'time-night'];
+    const timeClasses = ['time-sunrise', 'time-golden', 'time-morning', 'time-day', 'time-afternoon', 'time-blue-hour', 'time-night'];
 
     // Get user's saved theme preference
     const savedTheme = localStorage.getItem('rollplanner_theme');

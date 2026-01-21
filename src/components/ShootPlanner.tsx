@@ -5,7 +5,7 @@ import { WeatherData } from '@/lib/types';
 import { searchLocations, fetchForecastWeather, getSunTimes, LocationResult, SunTimes } from '@/lib/weather';
 
 // Time-of-day theme types for dynamic theming
-export type TimeOfDay = 'sunrise' | 'golden' | 'day' | 'blue-hour' | 'night' | null;
+export type TimeOfDay = 'sunrise' | 'golden' | 'morning' | 'day' | 'afternoon' | 'blue-hour' | 'night' | null;
 
 interface ShootPlannerProps {
   onForecastChange: (weather: WeatherData | null) => void;
@@ -18,14 +18,13 @@ function formatTime(date: Date): string {
 }
 
 // Time slot configuration with photography-focused descriptions
-// timeOfDay controls dynamic theme: sunrise, golden, day, blue-hour, night
-// Labels sync with Light selector: Midday, Golden, Soft, Overcast, Blue Hour, Night
+// Each slot has a unique timeOfDay theme for color differentiation
 const TIME_SLOTS = [
   { key: 'sunrise', label: 'Sunrise', desc: 'Soft warm light', timeOfDay: 'sunrise' as TimeOfDay },
   { key: 'goldenMorning', label: 'Golden', desc: 'Warm directional', timeOfDay: 'golden' as TimeOfDay },
-  { key: 'midMorning', label: 'Soft', desc: 'Morning soft', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midMorning', label: 'Soft', desc: 'Morning soft', timeOfDay: 'morning' as TimeOfDay },
   { key: 'midday', label: 'Midday', desc: 'High contrast', timeOfDay: 'day' as TimeOfDay },
-  { key: 'midAfternoon', label: 'Soft', desc: 'Afternoon soft', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midAfternoon', label: 'Soft', desc: 'Afternoon soft', timeOfDay: 'afternoon' as TimeOfDay },
   { key: 'goldenEvening', label: 'Golden', desc: 'Warm directional', timeOfDay: 'golden' as TimeOfDay },
   { key: 'twilight', label: 'Blue Hour', desc: 'Cool ambient', timeOfDay: 'blue-hour' as TimeOfDay },
   { key: 'night', label: 'Night', desc: 'Low light', timeOfDay: 'night' as TimeOfDay },
@@ -50,10 +49,12 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
   const [forecast, setForecast] = useState<WeatherData | null>(null);
+  const [forecastCache, setForecastCache] = useState<Map<string, WeatherData>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingSunTimes, setIsLoadingSunTimes] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [isPreloading, setIsPreloading] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -71,13 +72,57 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     };
   }), []);
 
-  // Handle location selection - fetch sun times immediately with loading state
+  // Preload all forecasts for a given date and sun times
+  const preloadForecasts = useCallback(async (
+    location: LocationResult,
+    dateStr: string,
+    times: SunTimes
+  ) => {
+    setIsPreloading(true);
+    const newCache = new Map<string, WeatherData>();
+
+    // Fetch all time slots in parallel
+    const fetchPromises = TIME_SLOTS.map(async ({ key }) => {
+      const time = times[key as keyof SunTimes];
+      const targetDate = new Date(dateStr);
+      targetDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
+
+      try {
+        const data = await fetchForecastWeather(location.lat, location.lon, targetDate);
+        if (data) {
+          return { key: `${dateStr}-${key}`, data };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    results.forEach(result => {
+      if (result && result.data) {
+        newCache.set(result.key, result.data);
+      }
+    });
+
+    setForecastCache(prev => {
+      const merged = new Map(prev);
+      newCache.forEach((value, key) => merged.set(key, value));
+      return merged;
+    });
+    setIsPreloading(false);
+
+    return newCache;
+  }, []);
+
+  // Handle location selection - fetch sun times and preload all forecasts
   const selectLocation = useCallback(async (location: LocationResult) => {
     setSelectedLocation(location);
     setSearchQuery(location.name);
     setShowResults(false);
     setSearchResults([]);
     setIsLoadingSunTimes(true);
+    setForecastCache(new Map()); // Clear cache for new location
 
     // Fetch sun times for the selected location
     const date = new Date(selectedDate);
@@ -86,12 +131,22 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     setIsLoadingSunTimes(false);
     if (times) {
       setSunTimes(times);
-      // Auto-select midday as default (shows default theme, users discover dynamic theming when switching)
+      // Auto-select midday as default
       setSelectedTime(formatTime(times.midday));
       setSelectedTimeSlot('midday');
       onTimeOfDayChange?.('day');
+
+      // Preload all forecasts for instant switching
+      const cache = await preloadForecasts(location, selectedDate, times);
+
+      // Set initial forecast from cache
+      const cachedForecast = cache.get(`${selectedDate}-midday`);
+      if (cachedForecast) {
+        setForecast(cachedForecast);
+        onForecastChange(cachedForecast);
+      }
     }
-  }, [selectedDate, onTimeOfDayChange]);
+  }, [selectedDate, onTimeOfDayChange, preloadForecasts, onForecastChange]);
 
   // Fast debounced location search - 100ms for instant feel
   useEffect(() => {
@@ -141,56 +196,92 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     };
   }, [searchQuery, selectedLocation]);
 
-  // Fetch sun times when date changes (location already handled in selectLocation)
+  // Fetch sun times and preload forecasts when date changes
   useEffect(() => {
     if (!selectedLocation) {
       setSunTimes(null);
       return;
     }
 
-    // Skip if we just selected the location (handled in selectLocation)
-    // Only run when date changes for an existing location
     let isCancelled = false;
 
-    const fetchSunTimesData = async () => {
-      setIsLoadingSunTimes(true);
+    const fetchSunTimesAndForecasts = async () => {
+      // Check if we already have forecasts for this date
+      const cacheKey = `${selectedDate}-midday`;
+      const hasCachedData = forecastCache.has(cacheKey);
+
+      if (!hasCachedData) {
+        setIsLoadingSunTimes(true);
+      }
+
       const date = new Date(selectedDate);
       const times = await getSunTimes(selectedLocation.lat, selectedLocation.lon, date);
 
-      if (!isCancelled) {
+      if (!isCancelled && times) {
+        setSunTimes(times);
         setIsLoadingSunTimes(false);
-        if (times) {
-          setSunTimes(times);
-          // Keep selected time if still valid, otherwise select golden evening
-          if (!selectedTime) {
-            setSelectedTime(formatTime(times.goldenEvening));
+
+        // Keep selected time slot, update the actual time value
+        if (selectedTimeSlot) {
+          const slotTime = times[selectedTimeSlot as keyof SunTimes];
+          if (slotTime) {
+            setSelectedTime(formatTime(slotTime));
           }
         }
+
+        // Preload forecasts if not cached
+        if (!hasCachedData) {
+          const cache = await preloadForecasts(selectedLocation, selectedDate, times);
+
+          // Update forecast from cache
+          if (selectedTimeSlot && !isCancelled) {
+            const cachedForecast = cache.get(`${selectedDate}-${selectedTimeSlot}`);
+            if (cachedForecast) {
+              setForecast(cachedForecast);
+              onForecastChange(cachedForecast);
+            }
+          }
+        }
+      } else if (!isCancelled) {
+        setIsLoadingSunTimes(false);
       }
     };
 
-    fetchSunTimesData();
+    fetchSunTimesAndForecasts();
 
     return () => {
       isCancelled = true;
     };
-  }, [selectedLocation, selectedDate, selectedTime]);
+  }, [selectedLocation, selectedDate, selectedTimeSlot, forecastCache, preloadForecasts, onForecastChange]);
 
-  // Fast forecast fetch - minimal debounce since cache handles repeat requests
+  // Use cached forecast when time slot changes - instant switching
   useEffect(() => {
-    if (!selectedLocation || !selectedTime) {
+    if (!selectedLocation || !selectedTimeSlot) {
       setForecast(null);
       onForecastChange(null);
       return;
     }
 
-    // Cancel any pending fetch
+    // Check cache first for instant switching
+    const cacheKey = `${selectedDate}-${selectedTimeSlot}`;
+    const cachedForecast = forecastCache.get(cacheKey);
+
+    if (cachedForecast) {
+      // Instant update from cache
+      setForecast(cachedForecast);
+      onForecastChange(cachedForecast);
+      setIsFetching(false);
+      return;
+    }
+
+    // Fallback to fetching if not in cache (shouldn't happen normally)
+    if (!selectedTime) return;
+
     if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
     if (abortControllerRef.current) abortControllerRef.current.abort();
 
     setIsFetching(true);
 
-    // Minimal debounce - just enough to batch rapid clicks
     fetchTimeoutRef.current = setTimeout(async () => {
       abortControllerRef.current = new AbortController();
 
@@ -220,12 +311,13 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     return () => {
       if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
     };
-  }, [selectedLocation, selectedDate, selectedTime, onForecastChange]);
+  }, [selectedLocation, selectedDate, selectedTime, selectedTimeSlot, forecastCache, onForecastChange]);
 
   const handleClear = () => {
     setSelectedLocation(null);
     setSearchQuery('');
     setForecast(null);
+    setForecastCache(new Map());
     setSunTimes(null);
     setSearchResults([]);
     setShowResults(false);
