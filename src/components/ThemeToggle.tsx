@@ -20,23 +20,24 @@ export function ThemeToggle() {
       document.documentElement.classList.add('dark');
     }
 
-    // Preload both themes by briefly toggling dark class
-    // This forces browser to compute styles for both themes upfront
+    // Preload all themes by briefly toggling each class
+    // This forces browser to compute styles for all themes upfront
     const preloadThemes = () => {
       const html = document.documentElement;
       const currentlyDark = html.classList.contains('dark');
 
+      // All time-of-day theme classes to preload
+      const timeThemes = ['time-sunrise', 'time-golden', 'time-morning', 'time-day', 'time-afternoon', 'time-blue-hour', 'time-night'];
+
       // Temporarily disable transitions
       html.style.transition = 'none';
 
-      // Toggle to opposite theme briefly
+      // Preload dark/light themes
       if (currentlyDark) {
         html.classList.remove('dark');
       } else {
         html.classList.add('dark');
       }
-
-      // Force style recalculation
       void html.offsetHeight;
 
       // Toggle back
@@ -45,8 +46,16 @@ export function ThemeToggle() {
       } else {
         html.classList.remove('dark');
       }
+      void html.offsetHeight;
 
-      // Force another recalculation
+      // Preload all time-of-day themes
+      timeThemes.forEach(theme => {
+        html.classList.add(theme);
+        void html.offsetHeight;
+        html.classList.remove(theme);
+      });
+
+      // Force final recalculation
       void html.offsetHeight;
 
       // Re-enable transitions

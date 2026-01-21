@@ -143,15 +143,15 @@
   --led-on-deep: #e88600;
 }
 
-/* Morning Soft - Cool, fresh, slightly blue-tinted */
+/* Morning Soft - Warm but lighter than golden, transitioning toward neutral */
 .time-morning {
-  --bg: #e4e8ed;
-  --bg-inset: #d8dce2;
-  --led-on: #4a9cd4;
-  --led-on-glow: rgba(74, 156, 212, 0.5);
-  --led-on-deep: #3a8cc4;
-  --text-secondary: #4a5560;
-  --text-tertiary: #5a6570;
+  --bg: #f5ede5;
+  --bg-inset: #ebe3d9;
+  --led-on: #e8a050;
+  --led-on-glow: rgba(232, 160, 80, 0.5);
+  --led-on-deep: #d89040;
+  --text-secondary: #5a5248;
+  --text-tertiary: #6a6258;
 }
 
 /* Afternoon Soft - Warm, slightly amber-tinted */
@@ -330,7 +330,7 @@
   text-shadow: none;
 }
 
-/* Morning soft buttons - cool blue tinted */
+/* Morning soft buttons - warm tinted (between golden and midday) */
 .time-morning .selector-option,
 .time-morning .shoot-planner-date-btn,
 .time-morning .shoot-planner-time-btn,
@@ -338,11 +338,11 @@
 .time-morning .shoot-planner-toggle,
 .time-morning .btn-primary,
 .time-morning .btn-secondary {
-  background: #dce2e8;
+  background: #f0e5d8;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 3px 0 #b8c0c8,
+    0 3px 0 #d0c4b4,
     0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -353,22 +353,22 @@
 .time-morning .shoot-planner-toggle:hover,
 .time-morning .btn-primary:hover:not(:disabled),
 .time-morning .btn-secondary:hover {
-  background: #e4eaf0;
+  background: #f5ebe0;
 }
 
 .time-morning .selector-option.selected,
 .time-morning .shoot-planner-date-btn.active,
 .time-morning .shoot-planner-time-btn.active {
-  background: #d0d8e0;
+  background: #e8dccf;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 2px 0 #b8c0c8,
+    0 2px 0 #d0c4b4,
     0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .time-morning .toggle-track {
-  background: #d0d8e0;
+  background: #e8dccf;
 }
 
 .time-morning .btn-primary:not(:disabled) {
@@ -377,8 +377,8 @@
 }
 
 .time-morning .btn-primary:disabled {
-  background: #d0d8e0;
-  color: #7a8890;
+  background: #e0d4c8;
+  color: #8a8078;
 }
 
 .time-morning .btn-primary.pulse:not(:disabled) {
@@ -2142,15 +2142,16 @@ body::before {
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
-  padding: 12px;
+  padding: var(--space-4) var(--space-6);
+  min-height: 54px;
   background: #f0f0f2;
   border: none;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--text-sm);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
   margin-bottom: var(--space-4);
