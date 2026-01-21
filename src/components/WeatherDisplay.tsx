@@ -82,11 +82,10 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
   if (loading) {
     return (
       <div className="weather-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--text-tertiary)', opacity: 0.3 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
           <div style={{ flex: 1 }}>
-            <div style={{ height: 12, width: 96, background: 'var(--text-tertiary)', borderRadius: 4, opacity: 0.3, marginBottom: 8 }} />
-            <div style={{ height: 10, width: 128, background: 'var(--text-tertiary)', borderRadius: 4, opacity: 0.2 }} />
+            <div style={{ height: 10, width: 80, background: 'rgba(255,255,255,0.2)', borderRadius: 3 }} />
           </div>
         </div>
       </div>
@@ -106,8 +105,8 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
   if (!weather) return null;
 
   const sunPositionLabel = {
-    golden: 'Golden Hour',
-    high: 'Midday Sun',
+    golden: 'Golden',
+    high: 'Midday',
     low: 'Low Sun',
     twilight: 'Twilight',
     night: 'Night',
@@ -115,52 +114,46 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
 
   return (
     <div className="weather-card">
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+      {/* Compact header: condition + location + sun position */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
+          <div style={{ color: '#a8a8ac' }}>
             <WeatherIcon sunPosition={weather.sunPosition} cloudCover={weather.cloudCover} />
           </div>
           <div>
-            <div className="guidance-value" style={{ marginBottom: 2 }}>
+            <span className="guidance-value" style={{ fontSize: 'var(--text-sm)' }}>
               {weather.conditions}
-            </div>
-            <div className="guidance-label">
+            </span>
+            <span className="guidance-label" style={{ marginLeft: 'var(--space-2)' }}>
               {weather.locationName}
-            </div>
+            </span>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div className="guidance-label">
-            {sunPositionLabel}
-          </div>
-        </div>
+        <span className="guidance-label">{sunPositionLabel}</span>
       </div>
 
-      {/* Stats row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
+      {/* Stats inline */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a8a8ac' }}>
           <VisibilityIcon />
           <span className="guidance-label">{weather.visibility}km</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
-          <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a8a8ac' }}>
+          <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
           </svg>
           <span className="guidance-label">{weather.cloudCover}%</span>
         </div>
       </div>
 
-      {/* Light quality */}
-      <div style={{ marginBottom: 'var(--space-2)' }}>
-        <div className="guidance-value">
+      {/* Light quality + shooting note combined */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 'var(--space-2)' }}>
+        <div className="guidance-value" style={{ fontSize: 'var(--text-xs)', marginBottom: 2 }}>
           {weather.lightQuality}
         </div>
-      </div>
-
-      {/* Shooting note */}
-      <div className="guidance-note" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
-        {weather.shootingNote}
+        <div className="guidance-label" style={{ fontSize: '10px', lineHeight: 1.4 }}>
+          {weather.shootingNote}
+        </div>
       </div>
     </div>
   );
