@@ -38,8 +38,14 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    const now = new Date();
+    // If it's past midday (12:00), default to tomorrow
+    if (now.getHours() >= 12) {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow.toISOString().split('T')[0];
+    }
+    return now.toISOString().split('T')[0];
   });
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
