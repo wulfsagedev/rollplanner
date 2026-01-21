@@ -302,7 +302,43 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
 
 // ============================================
 // LOCATION SEARCH (Forward geocoding) - with caching
+// Prioritizes cities and populated places for better UX
 // ============================================
+
+interface NominatimResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+  name?: string;
+  type?: string;
+  class?: string;
+  importance?: number;
+  addresstype?: string;
+}
+
+// Scoring function to prioritize cities and populated places
+function scoreLocationResult(item: NominatimResult): number {
+  let score = item.importance || 0;
+
+  // Boost populated places (cities, towns, villages)
+  const placeTypes = ['city', 'town', 'village', 'municipality', 'suburb', 'neighbourhood'];
+  if (item.addresstype && placeTypes.includes(item.addresstype)) {
+    score += 0.5;
+  }
+
+  // Boost if class is 'place' (indicates populated area)
+  if (item.class === 'place') {
+    score += 0.3;
+  }
+
+  // Penalize certain types that are likely not what users want
+  const penalizedTypes = ['amenity', 'shop', 'tourism', 'building', 'highway'];
+  if (item.class && penalizedTypes.includes(item.class)) {
+    score -= 0.3;
+  }
+
+  return score;
+}
 
 export async function searchLocations(query: string): Promise<LocationResult[]> {
   if (!query || query.length < 2) return [];
@@ -315,15 +351,35 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
   if (cached) return cached;
 
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+    // Use addressdetails to get better classification info
+    // Use featuretype=city,town,village to prefer populated places
+    const params = new URLSearchParams({
+      q: query,
+      format: 'json',
+      limit: '8',  // Get more results so we can re-rank them
+      addressdetails: '1',
+      'accept-language': 'en',  // Consistent English results
+    });
+
+    const url = `https://nominatim.openstreetmap.org/search?${params}`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'RollPlanner/1.0' }
     });
 
     if (!response.ok) return [];
 
-    const data = await response.json();
-    const results: LocationResult[] = data.map((item: { display_name: string; lat: string; lon: string; name?: string }) => ({
+    const data: NominatimResult[] = await response.json();
+
+    // Score and sort results to prioritize cities/towns
+    const scoredResults = data
+      .map(item => ({
+        item,
+        score: scoreLocationResult(item)
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);  // Take top 5 after sorting
+
+    const results: LocationResult[] = scoredResults.map(({ item }) => ({
       name: item.name || item.display_name.split(',')[0],
       displayName: item.display_name,
       lat: parseFloat(item.lat),

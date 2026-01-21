@@ -42,10 +42,10 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
   const [isFetching, setIsFetching] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const autoSelectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   // Memoize available dates
   const availableDates = useMemo(() => Array.from({ length: 8 }, (_, i) => {
@@ -74,10 +74,9 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     }
   }, [selectedDate]);
 
-  // Fast debounced location search - 150ms for snappy feel
+  // Fast debounced location search - 100ms for instant feel
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (autoSelectTimeoutRef.current) clearTimeout(autoSelectTimeoutRef.current);
 
     if (searchQuery.length < 2) {
       setSearchResults([]);
@@ -86,6 +85,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
       return;
     }
 
+    // If query matches selected location, don't search
     if (selectedLocation && selectedLocation.name.toUpperCase() === searchQuery.toUpperCase()) {
       setIsSearching(false);
       return;
@@ -93,28 +93,34 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
     setIsSearching(true);
 
-    // Very fast debounce - cache makes repeated searches instant
-    searchTimeoutRef.current = setTimeout(async () => {
-      const results = await searchLocations(searchQuery);
-      setSearchResults(results);
-      setIsSearching(false);
+    // Cancel any in-flight search request
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+    searchAbortRef.current = new AbortController();
 
-      if (results.length > 0) {
-        setShowResults(true);
-        // Quick auto-select for faster flow
-        autoSelectTimeoutRef.current = setTimeout(() => {
-          if (results.length > 0) selectLocation(results[0]);
-        }, 1200);
-      } else {
-        setShowResults(false);
+    // Very fast debounce - cached searches are instant
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchLocations(searchQuery);
+
+        // Only update if this search wasn't aborted
+        if (!searchAbortRef.current?.signal.aborted) {
+          setSearchResults(results);
+          setIsSearching(false);
+          setShowResults(results.length > 0);
+        }
+      } catch {
+        if (!searchAbortRef.current?.signal.aborted) {
+          setIsSearching(false);
+        }
       }
-    }, 150);
+    }, 100);
 
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-      if (autoSelectTimeoutRef.current) clearTimeout(autoSelectTimeoutRef.current);
     };
-  }, [searchQuery, selectedLocation, selectLocation]);
+  }, [searchQuery, selectedLocation]);
 
   // Fetch sun times when date changes (location already handled in selectLocation)
   useEffect(() => {
@@ -246,8 +252,24 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
                 setForecast(null);
               }
             }}
+            onKeyDown={(e) => {
+              // Enter key selects first result
+              if (e.key === 'Enter' && searchResults.length > 0 && !selectedLocation) {
+                e.preventDefault();
+                selectLocation(searchResults[0]);
+              }
+              // Escape closes dropdown
+              if (e.key === 'Escape') {
+                setShowResults(false);
+                inputRef.current?.blur();
+              }
+            }}
             placeholder="Location"
             className="shoot-planner-input"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             onFocus={() => searchResults.length > 0 && !selectedLocation && setShowResults(true)}
             onBlur={() => setTimeout(() => setShowResults(false), 150)}
           />
@@ -327,10 +349,11 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
             </div>
           ) : forecast && (
             <>
-              <div className="shoot-planner-forecast-row">
-                <span className="shoot-planner-forecast-condition">{forecast.conditions}</span>
+              <div className="shoot-planner-forecast-header">
+                <span className="shoot-planner-forecast-location">{forecast.locationName}</span>
                 <span className="shoot-planner-forecast-sun">{forecast.sunPosition}</span>
               </div>
+              <div className="shoot-planner-forecast-condition">{forecast.conditions}</div>
               <div className="shoot-planner-forecast-light">{forecast.lightQuality}</div>
               <div className="shoot-planner-forecast-note">{forecast.shootingNote}</div>
             </>
