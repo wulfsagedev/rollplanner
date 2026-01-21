@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -86,11 +85,8 @@ export function ThemeToggle() {
   // Prevent hydration mismatch
   if (!mounted) {
     return (
-      <button
-        className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center"
-        aria-label="Toggle theme"
-      >
-        <span className="w-5 h-5" />
+      <button className="theme-toggle" aria-label="Toggle theme">
+        <span style={{ width: 20, height: 20 }} />
       </button>
     );
   }
@@ -98,39 +94,36 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className={cn(
-        'w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center',
-        'bg-[var(--bg-inset)]',
-        'shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_1px_0_var(--bevel-light)]',
-        'dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.2),0_1px_0_rgba(255,255,255,0.05)]',
-        'hover:bg-[#d4d4d8] dark:hover:bg-[#3a3a3e]',
-        'transition-colors duration-150',
-        'focus-visible:outline-2 focus-visible:outline-[var(--led-on)] focus-visible:outline-offset-2'
-      )}
+      className="theme-toggle"
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
         // Sun icon
         <svg
-          className="w-5 h-5 text-[var(--text-secondary)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
           <circle cx="12" cy="12" r="5" />
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       ) : (
         // Moon icon
         <svg
-          className="w-5 h-5 text-[var(--text-secondary)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >

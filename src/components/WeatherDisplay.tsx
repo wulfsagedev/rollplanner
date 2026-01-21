@@ -9,10 +9,12 @@ interface WeatherDisplayProps {
 }
 
 function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['sunPosition']; cloudCover: number }) {
+  const style = { width: 20, height: 20 };
+
   // Night
   if (sunPosition === 'night') {
     return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
       </svg>
     );
@@ -21,7 +23,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
   // Twilight
   if (sunPosition === 'twilight') {
     return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
         <circle cx="12" cy="12" r="4" strokeDasharray="2 2" />
       </svg>
@@ -31,7 +33,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
   // Cloudy
   if (cloudCover > 70) {
     return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
       </svg>
     );
@@ -40,7 +42,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
   // Partly cloudy
   if (cloudCover > 30) {
     return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="10" r="4" />
         <path d="M12 2v2M12 16v2M4 10H2M22 10h-2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M5.64 14.36l1.42-1.42" />
         <path d="M17 18h-5a4 4 0 0 1 0-8" />
@@ -51,7 +53,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
   // Golden hour sun
   if (sunPosition === 'golden') {
     return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="5" />
         <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
       </svg>
@@ -60,7 +62,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
 
   // Default sun
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
     </svg>
@@ -69,7 +71,7 @@ function WeatherIcon({ sunPosition, cloudCover }: { sunPosition: WeatherData['su
 
 function VisibilityIcon() {
   return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -79,12 +81,12 @@ function VisibilityIcon() {
 export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps) {
   if (loading) {
     return (
-      <div className="bg-[var(--bg-inset)] rounded-[var(--radius-md)] p-4 mb-6 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_1px_0_var(--bevel-light)]">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 rounded-full bg-[var(--text-tertiary)] animate-pulse" />
-          <div className="flex-1">
-            <div className="h-3 w-24 bg-[var(--text-tertiary)] rounded animate-pulse mb-2" />
-            <div className="h-2 w-32 bg-[var(--text-tertiary)] rounded animate-pulse opacity-50" />
+      <div className="weather-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--text-tertiary)', opacity: 0.3 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 12, width: 96, background: 'var(--text-tertiary)', borderRadius: 4, opacity: 0.3, marginBottom: 8 }} />
+            <div style={{ height: 10, width: 128, background: 'var(--text-tertiary)', borderRadius: 4, opacity: 0.2 }} />
           </div>
         </div>
       </div>
@@ -93,8 +95,8 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
 
   if (error) {
     return (
-      <div className="bg-[var(--bg-inset)] rounded-[var(--radius-md)] p-4 mb-6 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_1px_0_var(--bevel-light)]">
-        <div className="text-xs font-medium tracking-wide text-[var(--text-tertiary)]">
+      <div className="weather-card">
+        <div className="guidance-label">
           {error}
         </div>
       </div>
@@ -112,56 +114,52 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
   }[weather.sunPosition];
 
   return (
-    <div className="bg-[var(--bg-inset)] rounded-[var(--radius-md)] p-4 mb-6 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_1px_0_var(--bevel-light)]">
+    <div className="weather-card">
       {/* Header row */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="text-[var(--text-secondary)]">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div style={{ color: 'var(--text-secondary)' }}>
             <WeatherIcon sunPosition={weather.sunPosition} cloudCover={weather.cloudCover} />
           </div>
           <div>
-            <div className="text-sm font-medium tracking-wide uppercase text-[var(--text-primary)]">
+            <div className="guidance-value" style={{ marginBottom: 2 }}>
               {weather.conditions}
             </div>
-            <div className="text-xs font-medium tracking-wide text-[var(--text-tertiary)]">
+            <div className="guidance-label">
               {weather.locationName}
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs font-medium tracking-wider uppercase text-[var(--text-secondary)]">
+        <div style={{ textAlign: 'right' }}>
+          <div className="guidance-label">
             {sunPositionLabel}
           </div>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 mb-3 pb-3 border-b border-[var(--border-light)]">
-        <div className="flex items-center gap-1.5">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
           <VisibilityIcon />
-          <span className="text-xs font-medium tracking-wide text-[var(--text-secondary)]">
-            {weather.visibility}km
-          </span>
+          <span className="guidance-label">{weather.visibility}km</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
+          <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
           </svg>
-          <span className="text-xs font-medium tracking-wide text-[var(--text-secondary)]">
-            {weather.cloudCover}%
-          </span>
+          <span className="guidance-label">{weather.cloudCover}%</span>
         </div>
       </div>
 
       {/* Light quality */}
-      <div className="mb-2">
-        <div className="text-xs font-medium tracking-wide uppercase text-[var(--text-primary)]">
+      <div style={{ marginBottom: 'var(--space-2)' }}>
+        <div className="guidance-value">
           {weather.lightQuality}
         </div>
       </div>
 
       {/* Shooting note */}
-      <div className="text-xs font-medium tracking-wide text-[var(--text-tertiary)] leading-relaxed">
+      <div className="guidance-note" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
         {weather.shootingNote}
       </div>
     </div>
