@@ -55,7 +55,10 @@ export default function Home() {
     <main className="app-container">
       {/* Persistent Header */}
       <header className="persistent-header">
-        <h1 className="app-title">Roll Planner</h1>
+        <div className="app-brand">
+          <h1 className="app-title">Roll Planner</h1>
+          <span className="app-version">v2.0</span>
+        </div>
         <ThemeToggle />
       </header>
 
