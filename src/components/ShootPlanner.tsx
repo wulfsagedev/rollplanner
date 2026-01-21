@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { WeatherData } from '@/lib/types';
 import { searchLocations, fetchForecastWeather, getSunTimes, LocationResult, SunTimes } from '@/lib/weather';
 
@@ -9,14 +9,21 @@ interface ShootPlannerProps {
   onModeChange: (isPlanning: boolean) => void;
 }
 
-
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function formatTimeOption(date: Date, label: string): string {
-  return `${formatTime(date)} · ${label}`;
-}
+// Time slot configuration for cleaner rendering
+const TIME_SLOTS = [
+  { key: 'sunrise', label: 'Sunrise' },
+  { key: 'goldenMorning', label: 'Golden' },
+  { key: 'midMorning', label: 'Mid AM' },
+  { key: 'midday', label: 'Noon' },
+  { key: 'midAfternoon', label: 'Mid PM' },
+  { key: 'goldenEvening', label: 'Golden' },
+  { key: 'sunset', label: 'Sunset' },
+  { key: 'twilight', label: 'Dusk' },
+] as const;
 
 export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -27,33 +34,50 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
-  const [selectedTime, setSelectedTime] = useState<string>('17:00');
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
   const [forecast, setForecast] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSelectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Handle location selection
-  const selectLocation = useCallback((location: LocationResult) => {
+  // Memoize available dates
+  const availableDates = useMemo(() => Array.from({ length: 8 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    return {
+      value: date.toISOString().split('T')[0],
+      label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+    };
+  }), []);
+
+  // Handle location selection - fetch sun times immediately
+  const selectLocation = useCallback(async (location: LocationResult) => {
     setSelectedLocation(location);
     setSearchQuery(location.name);
     setShowResults(false);
     setSearchResults([]);
-  }, []);
 
-  // Debounced location search
+    // Immediately fetch sun times for instant UI update
+    const date = new Date(selectedDate);
+    const times = await getSunTimes(location.lat, location.lon, date);
+    if (times) {
+      setSunTimes(times);
+      // Auto-select golden evening as default (most popular shoot time)
+      setSelectedTime(formatTime(times.goldenEvening));
+    }
+  }, [selectedDate]);
+
+  // Faster debounced location search (reduced from 500ms to 250ms)
   useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    if (autoSelectTimeoutRef.current) {
-      clearTimeout(autoSelectTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (autoSelectTimeoutRef.current) clearTimeout(autoSelectTimeoutRef.current);
 
     if (searchQuery.length < 2) {
       setSearchResults([]);
@@ -62,7 +86,6 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
       return;
     }
 
-    // Don't search if we already have a selected location matching the query
     if (selectedLocation && selectedLocation.name.toUpperCase() === searchQuery.toUpperCase()) {
       setIsSearching(false);
       return;
@@ -77,29 +100,22 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
       if (results.length > 0) {
         setShowResults(true);
-
-        // Auto-select the first result after 2 seconds if user doesn't pick one
+        // Faster auto-select (reduced from 2s to 1.5s)
         autoSelectTimeoutRef.current = setTimeout(() => {
-          if (results.length > 0) {
-            selectLocation(results[0]);
-          }
-        }, 2000);
+          if (results.length > 0) selectLocation(results[0]);
+        }, 1500);
       } else {
         setShowResults(false);
       }
-    }, 500);
+    }, 250);
 
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-      if (autoSelectTimeoutRef.current) {
-        clearTimeout(autoSelectTimeoutRef.current);
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (autoSelectTimeoutRef.current) clearTimeout(autoSelectTimeoutRef.current);
     };
   }, [searchQuery, selectedLocation, selectLocation]);
 
-  // Fetch sun times when location or date changes
+  // Fetch sun times when date changes (location already handled in selectLocation)
   useEffect(() => {
     if (!selectedLocation) {
       setSunTimes(null);
@@ -109,42 +125,63 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     const fetchSunTimesData = async () => {
       const date = new Date(selectedDate);
       const times = await getSunTimes(selectedLocation.lat, selectedLocation.lon, date);
-      setSunTimes(times);
+      if (times) {
+        setSunTimes(times);
+        // Keep selected time if still valid, otherwise select golden evening
+        if (!selectedTime) {
+          setSelectedTime(formatTime(times.goldenEvening));
+        }
+      }
     };
 
     fetchSunTimesData();
-  }, [selectedLocation, selectedDate]);
+  }, [selectedLocation, selectedDate, selectedTime]);
 
-  // Fetch forecast when location, date, or time changes
-  const fetchForecastData = useCallback(async () => {
-    if (!selectedLocation) {
+  // Optimized forecast fetch with debouncing and abort controller
+  useEffect(() => {
+    if (!selectedLocation || !selectedTime) {
       setForecast(null);
       onForecastChange(null);
       return;
     }
 
-    setLoading(true);
+    // Cancel any pending fetch
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    if (abortControllerRef.current) abortControllerRef.current.abort();
 
-    const [hours, minutes] = selectedTime.split(':').map(Number);
-    const targetDate = new Date(selectedDate);
-    targetDate.setHours(hours, minutes, 0, 0);
+    setIsFetching(true);
 
-    const data = await fetchForecastWeather(
-      selectedLocation.lat,
-      selectedLocation.lon,
-      targetDate
-    );
+    // Small debounce to prevent rapid fire when clicking time buttons
+    fetchTimeoutRef.current = setTimeout(async () => {
+      abortControllerRef.current = new AbortController();
 
-    setForecast(data);
-    onForecastChange(data);
-    setLoading(false);
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const targetDate = new Date(selectedDate);
+      targetDate.setHours(hours, minutes, 0, 0);
+
+      try {
+        const data = await fetchForecastWeather(
+          selectedLocation.lat,
+          selectedLocation.lon,
+          targetDate
+        );
+
+        if (!abortControllerRef.current?.signal.aborted) {
+          setForecast(data);
+          onForecastChange(data);
+          setIsFetching(false);
+        }
+      } catch {
+        if (!abortControllerRef.current?.signal.aborted) {
+          setIsFetching(false);
+        }
+      }
+    }, 100);
+
+    return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    };
   }, [selectedLocation, selectedDate, selectedTime, onForecastChange]);
-
-  useEffect(() => {
-    if (selectedLocation) {
-      fetchForecastData();
-    }
-  }, [selectedLocation, selectedDate, selectedTime, fetchForecastData]);
 
   const handleClear = () => {
     setSelectedLocation(null);
@@ -153,6 +190,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     setSunTimes(null);
     setSearchResults([]);
     setShowResults(false);
+    setSelectedTime('');
     onForecastChange(null);
     onModeChange(false);
     setIsExpanded(false);
@@ -161,30 +199,17 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
   const handleExpand = () => {
     setIsExpanded(true);
     onModeChange(true);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const setQuickTime = (time: Date) => {
+  const setQuickTime = useCallback((time: Date) => {
     setSelectedTime(formatTime(time));
-  };
-
-  // Get available dates (today + next 7 days)
-  const availableDates = Array.from({ length: 8 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return {
-      value: date.toISOString().split('T')[0],
-      label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-    };
-  });
+  }, []);
 
   if (!isExpanded) {
     return (
-      <button
-        onClick={handleExpand}
-        className="shoot-planner-toggle"
-      >
-        <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <button onClick={handleExpand} className="shoot-planner-toggle">
+        <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
@@ -195,18 +220,18 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
   return (
     <div className="shoot-planner">
+      {/* Minimal header */}
       <div className="shoot-planner-header">
-        <span className="shoot-planner-title">Plan Your Shoot</span>
-        <button onClick={handleClear} className="shoot-planner-close">
-          <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <span className="shoot-planner-title">Plan Shoot</span>
+        <button onClick={handleClear} className="shoot-planner-close" aria-label="Close">
+          <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      {/* Location Search */}
+      {/* Location Search - Compact */}
       <div className="shoot-planner-field">
-        <label className="shoot-planner-label">Location</label>
         <div className="shoot-planner-search">
           <input
             ref={inputRef}
@@ -214,177 +239,108 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              // Clear selected location when user types
               if (selectedLocation && e.target.value !== selectedLocation.name) {
                 setSelectedLocation(null);
+                setSunTimes(null);
+                setForecast(null);
               }
             }}
-            placeholder="Search city or place..."
+            placeholder="Location"
             className="shoot-planner-input"
             onFocus={() => searchResults.length > 0 && !selectedLocation && setShowResults(true)}
-            onBlur={() => {
-              // Delay hiding results to allow click
-              setTimeout(() => setShowResults(false), 200);
-            }}
+            onBlur={() => setTimeout(() => setShowResults(false), 150)}
           />
-          {(selectedLocation || isSearching) && (
-            <div className="shoot-planner-status">
-              {isSearching ? (
-                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>...</span>
-              ) : selectedLocation ? (
-                <svg style={{ width: 14, height: 14, color: 'var(--led-on)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : null}
-            </div>
-          )}
+          <div className="shoot-planner-status">
+            {isSearching && <span className="shoot-planner-dots" />}
+            {selectedLocation && !isSearching && (
+              <svg style={{ width: 12, height: 12, color: 'var(--led-on)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
         </div>
 
-        {/* Search Results Dropdown */}
         {showResults && searchResults.length > 0 && (
           <div className="shoot-planner-results">
-            {searchResults.map((result, index) => (
+            {searchResults.slice(0, 4).map((result, index) => (
               <button
                 key={index}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectLocation(result);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); selectLocation(result); }}
                 className="shoot-planner-result"
               >
-                <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <div className="shoot-planner-result-text">
-                  <span className="shoot-planner-result-name">{result.name}</span>
-                  <span className="shoot-planner-result-detail">{result.displayName}</span>
-                </div>
+                <span className="shoot-planner-result-name">{result.name}</span>
+                <span className="shoot-planner-result-detail">
+                  {result.displayName.split(',').slice(1, 3).join(', ')}
+                </span>
               </button>
             ))}
           </div>
         )}
+      </div>
 
-        {/* No results message */}
-        {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && !selectedLocation && (
-          <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            No locations found
+      {/* Date - Inline pills */}
+      {selectedLocation && (
+        <div className="shoot-planner-field">
+          <div className="shoot-planner-date-row">
+            {availableDates.slice(0, 5).map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSelectedDate(value)}
+                className={`shoot-planner-date-btn ${selectedDate === value ? 'active' : ''}`}
+              >
+                {label === 'Today' || label === 'Tomorrow' ? label : label.split(' ')[0]}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Date Selector */}
-      <div className="shoot-planner-field">
-        <label className="shoot-planner-label">Date</label>
-        <select
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="shoot-planner-select"
-        >
-          {availableDates.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Time Selector - Preset times only */}
+      {/* Time Grid - Clean 4x2 */}
       {sunTimes && (
         <div className="shoot-planner-field">
-          <label className="shoot-planner-label">Time</label>
           <div className="shoot-planner-times-grid">
-            <button
-              onClick={() => setQuickTime(sunTimes.sunrise)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.sunrise) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.sunrise)}</span>
-              <span className="shoot-planner-time-label">Sunrise</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.goldenMorning)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.goldenMorning) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.goldenMorning)}</span>
-              <span className="shoot-planner-time-label">Golden AM</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.midMorning)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midMorning) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.midMorning)}</span>
-              <span className="shoot-planner-time-label">Mid Morning</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.midday)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midday) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.midday)}</span>
-              <span className="shoot-planner-time-label">Midday</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.midAfternoon)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midAfternoon) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.midAfternoon)}</span>
-              <span className="shoot-planner-time-label">Mid Afternoon</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.goldenEvening)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.goldenEvening) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.goldenEvening)}</span>
-              <span className="shoot-planner-time-label">Golden PM</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.sunset)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.sunset) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.sunset)}</span>
-              <span className="shoot-planner-time-label">Sunset</span>
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.twilight)}
-              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.twilight) ? 'active' : ''}`}
-            >
-              <span className="shoot-planner-time-value">{formatTime(sunTimes.twilight)}</span>
-              <span className="shoot-planner-time-label">Twilight</span>
-            </button>
+            {TIME_SLOTS.map(({ key, label }) => {
+              const time = sunTimes[key as keyof SunTimes];
+              const timeStr = formatTime(time);
+              return (
+                <button
+                  key={key}
+                  onClick={() => setQuickTime(time)}
+                  className={`shoot-planner-time-btn ${selectedTime === timeStr ? 'active' : ''}`}
+                >
+                  <span className="shoot-planner-time-value">{timeStr}</span>
+                  <span className="shoot-planner-time-label">{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Forecast Display */}
-      {loading && (
-        <div className="shoot-planner-loading">
-          <span>Loading forecast...</span>
+      {/* Forecast - Clean card */}
+      {(forecast || isFetching) && (
+        <div className={`shoot-planner-forecast ${isFetching ? 'loading' : ''}`}>
+          {isFetching ? (
+            <div className="shoot-planner-forecast-loading">
+              <span className="shoot-planner-pulse" />
+            </div>
+          ) : forecast && (
+            <>
+              <div className="shoot-planner-forecast-row">
+                <span className="shoot-planner-forecast-condition">{forecast.conditions}</span>
+                <span className="shoot-planner-forecast-sun">{forecast.sunPosition}</span>
+              </div>
+              <div className="shoot-planner-forecast-light">{forecast.lightQuality}</div>
+              <div className="shoot-planner-forecast-note">{forecast.shootingNote}</div>
+            </>
+          )}
         </div>
       )}
 
-      {forecast && !loading && (
-        <div className="shoot-planner-forecast">
-          <div className="shoot-planner-forecast-header">
-            <span className="shoot-planner-forecast-condition">{forecast.conditions}</span>
-            <span className="shoot-planner-forecast-light">{forecast.sunPosition}</span>
-          </div>
-          <div className="shoot-planner-forecast-detail">
-            {forecast.lightQuality}
-          </div>
-          <div className="shoot-planner-forecast-note">
-            {forecast.shootingNote}
-          </div>
-        </div>
-      )}
-
-      {/* Help text when no location selected */}
-      {!selectedLocation && !loading && !forecast && (
-        <div style={{
-          fontSize: 10,
-          color: 'var(--text-tertiary)',
-          textAlign: 'center',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          padding: 'var(--space-3)'
-        }}>
-          Search and select a location to see forecast
+      {/* Minimal help */}
+      {!selectedLocation && (
+        <div className="shoot-planner-help">
+          Enter a location to see conditions
         </div>
       )}
     </div>
