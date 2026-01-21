@@ -123,13 +123,15 @@
    Dynamic theming based on selected shoot time
    ============================================ */
 
-/* Sunrise - Warm pink/orange tint */
+/* Sunrise - Darker rose/coral tint, distinctly different from golden */
 .time-sunrise {
-  --bg: #f5e8e4;
-  --bg-inset: #eddcd6;
-  --led-on: #ff7b54;
-  --led-on-glow: rgba(255, 123, 84, 0.6);
-  --led-on-deep: #e85d3a;
+  --bg: #e8d5d0;
+  --bg-inset: #dcc8c2;
+  --led-on: #e85a4f;
+  --led-on-glow: rgba(232, 90, 79, 0.6);
+  --led-on-deep: #c94a40;
+  --text-secondary: #5a4a48;
+  --text-tertiary: #6a5a58;
 }
 
 /* Golden Hour - Warm amber/orange glow */
@@ -141,15 +143,27 @@
   --led-on-deep: #e88600;
 }
 
-/* Blue Hour - Cool blue tint, darker */
+/* Blue Hour - Much darker cool blue, approaching dusk */
 .time-blue-hour {
-  --bg: #d8dfe8;
-  --bg-inset: #ccd4de;
-  --led-on: #5b9bd5;
-  --led-on-glow: rgba(91, 155, 213, 0.6);
-  --led-on-deep: #4a8bc5;
-  --text-secondary: #4a5568;
-  --text-tertiary: #5a6978;
+  --bg: #4a5568;
+  --bg-inset: #3d4756;
+  --bg-grain-opacity: 0.02;
+  --cavity: #1a2030;
+  --cavity-floor: #101520;
+  --text-primary: #e0e4ea;
+  --text-secondary: #a0a8b8;
+  --text-tertiary: #707888;
+  --text-engraved: #606878;
+  --led-off: #3a4050;
+  --led-on: #6ba3d9;
+  --led-on-glow: rgba(107, 163, 217, 0.6);
+  --led-on-deep: #5b93c9;
+  --bevel-light: rgba(255, 255, 255, 0.1);
+  --bevel-dark: rgba(0, 0, 0, 0.4);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --shadow-hard: 0 4px 0 rgba(0, 0, 0, 0.5);
+  --shadow-drop: 0 8px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Night - Matches dark mode exactly */
@@ -180,7 +194,7 @@
    Buttons follow the ambient theme
    ============================================ */
 
-/* Sunrise buttons - warm pink tinted */
+/* Sunrise buttons - darker rose/coral tinted */
 .time-sunrise .selector-option,
 .time-sunrise .shoot-planner-date-btn,
 .time-sunrise .shoot-planner-time-btn,
@@ -188,12 +202,12 @@
 .time-sunrise .shoot-planner-toggle,
 .time-sunrise .btn-primary,
 .time-sunrise .btn-secondary {
-  background: #f5e0da;
+  background: #dcc8c2;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 3px 0 #d4bdb5,
-    0 4px 8px rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 3px 0 #c0a8a0,
+    0 4px 8px rgba(0, 0, 0, 0.12);
 }
 
 .time-sunrise .selector-option:hover,
@@ -201,24 +215,40 @@
 .time-sunrise .shoot-planner-time-btn:hover,
 .time-sunrise .theme-toggle:hover,
 .time-sunrise .shoot-planner-toggle:hover,
-.time-sunrise .btn-primary:hover,
+.time-sunrise .btn-primary:hover:not(:disabled),
 .time-sunrise .btn-secondary:hover {
-  background: #f8e8e2;
+  background: #e4d0ca;
 }
 
 .time-sunrise .selector-option.selected,
 .time-sunrise .shoot-planner-date-btn.active,
 .time-sunrise .shoot-planner-time-btn.active {
-  background: #f0d8d0;
+  background: #d0bab4;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 2px 0 #d4bdb5,
-    0 3px 6px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 2px 0 #c0a8a0,
+    0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .time-sunrise .toggle-track {
-  background: #f0d8d0;
+  background: #d0bab4;
+}
+
+.time-sunrise .btn-primary:not(:disabled) {
+  color: var(--led-on);
+  text-shadow: 0 0 2px var(--led-on-glow);
+}
+
+.time-sunrise .btn-primary:disabled {
+  background: #d0c0ba;
+  color: #8a7a78;
+}
+
+.time-sunrise .btn-primary.pulse:not(:disabled) {
+  background: var(--led-on);
+  color: #ffffff;
+  text-shadow: none;
 }
 
 /* Golden hour buttons - warm amber tinted */
@@ -262,7 +292,23 @@
   background: #f0dac8;
 }
 
-/* Blue hour buttons - cool blue tinted */
+.time-golden .btn-primary:not(:disabled) {
+  color: var(--led-on);
+  text-shadow: 0 0 2px var(--led-on-glow);
+}
+
+.time-golden .btn-primary:disabled {
+  background: #e8d8c8;
+  color: #9a8a78;
+}
+
+.time-golden .btn-primary.pulse:not(:disabled) {
+  background: var(--led-on);
+  color: #ffffff;
+  text-shadow: none;
+}
+
+/* Blue hour buttons - dark theme with blue-gray tones */
 .time-blue-hour .selector-option,
 .time-blue-hour .shoot-planner-date-btn,
 .time-blue-hour .shoot-planner-time-btn,
@@ -270,12 +316,13 @@
 .time-blue-hour .shoot-planner-toggle,
 .time-blue-hour .btn-primary,
 .time-blue-hour .btn-secondary {
-  background: #c8d4e0;
+  background: #3d4756;
+  color: #a0a8b8;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-    0 3px 0 #a8b8c8,
-    0 4px 8px rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 3px 0 #2a3340,
+    0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .time-blue-hour .selector-option:hover,
@@ -283,28 +330,57 @@
 .time-blue-hour .shoot-planner-time-btn:hover,
 .time-blue-hour .theme-toggle:hover,
 .time-blue-hour .shoot-planner-toggle:hover,
-.time-blue-hour .btn-primary:hover,
+.time-blue-hour .btn-primary:hover:not(:disabled),
 .time-blue-hour .btn-secondary:hover {
-  background: #d0dce8;
+  background: #4a5568;
+  color: #c0c8d8;
 }
 
 .time-blue-hour .selector-option.selected,
 .time-blue-hour .shoot-planner-date-btn.active,
 .time-blue-hour .shoot-planner-time-btn.active {
-  background: #c0ccd8;
+  background: #354050;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-    0 2px 0 #a8b8c8,
-    0 3px 6px rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 2px 0 #2a3340,
+    0 3px 6px rgba(0, 0, 0, 0.25);
 }
 
 .time-blue-hour .toggle-track {
-  background: #c0ccd8;
+  background: #354050;
 }
 
 .time-blue-hour .toggle-knob {
-  background: #e8eef4;
+  background: #5a6578;
+}
+
+.time-blue-hour .btn-primary:not(:disabled) {
+  color: var(--led-on);
+  text-shadow: 0 0 2px var(--led-on-glow);
+}
+
+.time-blue-hour .btn-primary:disabled {
+  background: #2a3340;
+  color: #606878;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 0 #1a2530,
+    0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.time-blue-hour .btn-primary.pulse:not(:disabled) {
+  background: var(--led-on);
+  color: #ffffff;
+  text-shadow: none;
+}
+
+.time-blue-hour .btn-secondary {
+  color: #a0a8b8;
+}
+
+.time-blue-hour .btn-secondary:hover {
+  color: #c0c8d8;
 }
 
 /* Night buttons - matches .dark mode exactly */
@@ -460,17 +536,26 @@
   color: #d0d0d4;
 }
 
-/* Active button press states for all time themes */
+/* Active button press states for light time themes */
 .time-sunrise .selector-option:active,
 .time-sunrise .shoot-planner-date-btn:active,
 .time-sunrise .shoot-planner-time-btn:active,
 .time-golden .selector-option:active,
 .time-golden .shoot-planner-date-btn:active,
-.time-golden .shoot-planner-time-btn:active,
+.time-golden .shoot-planner-time-btn:active {
+  transform: translateY(2px);
+}
+
+/* Blue hour active state - dark theme */
 .time-blue-hour .selector-option:active,
 .time-blue-hour .shoot-planner-date-btn:active,
 .time-blue-hour .shoot-planner-time-btn:active {
   transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 1px 0 #1a2530,
+    0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
 .time-night .selector-option:active,

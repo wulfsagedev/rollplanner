@@ -351,19 +351,34 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
       return [];
     }
 
+    // Words to remove from location names (clutter)
+    const clutterWords = ['municipality', 'district', 'prefecture', 'province', 'county', 'region', 'metropolitan', 'urban'];
+    const cleanName = (name: string): string => {
+      let cleaned = name;
+      clutterWords.forEach(word => {
+        const regex = new RegExp(`\\s*(of\\s+)?${word}(\\s+of)?\\s*`, 'gi');
+        cleaned = cleaned.replace(regex, ' ').trim();
+      });
+      // Clean up extra spaces and trailing commas
+      return cleaned.replace(/\s+/g, ' ').replace(/,\s*$/, '').trim();
+    };
+
     // Format results - already sorted by population/relevance
     const results: LocationResult[] = data.results.map((item) => {
+      // Clean the city name
+      const cityName = cleanName(item.name);
+
       // Build display name: City, State/Province, Country
-      const parts = [item.name];
-      if (item.admin1 && item.admin1 !== item.name) {
-        parts.push(item.admin1);
+      const parts = [cityName];
+      if (item.admin1 && cleanName(item.admin1) !== cityName) {
+        parts.push(cleanName(item.admin1));
       }
       if (item.country) {
         parts.push(item.country);
       }
 
       return {
-        name: item.name,
+        name: cityName,
         displayName: parts.join(', '),
         lat: item.latitude,
         lon: item.longitude,

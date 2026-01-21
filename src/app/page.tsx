@@ -99,8 +99,12 @@ export default function Home() {
     // Remove all time classes first
     timeClasses.forEach(cls => html.classList.remove(cls));
 
-    // Apply new time class if set
-    if (timeOfDay) {
+    // Night is special - it activates actual dark mode
+    if (timeOfDay === 'night') {
+      html.classList.add('dark');
+      localStorage.setItem('rollplanner_theme', 'dark');
+    } else if (timeOfDay) {
+      // Apply time-of-day class for other times
       html.classList.add(`time-${timeOfDay}`);
     }
 
@@ -125,7 +129,8 @@ export default function Home() {
     if (!planning) {
       setPlannedWeather(null);
       setLight(null); // Reset light selection when exiting planning mode
-      setTimeOfDay(null); // Reset time-of-day theme when exiting planning mode
+      // Clear time-of-day state - if night was selected, dark mode persists via localStorage
+      setTimeOfDay(null);
     }
   }, [setLight]);
 
