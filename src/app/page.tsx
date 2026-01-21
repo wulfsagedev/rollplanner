@@ -57,7 +57,7 @@ export default function Home() {
       <header className="persistent-header">
         <div className="app-brand">
           <h1 className="app-title">Roll Planner</h1>
-          <span className="app-version">v2.0</span>
+          <span className="app-version">v1.0</span>
         </div>
         <ThemeToggle />
       </header>

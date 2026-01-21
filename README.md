@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Roll Planner v1.0
+
+A film photography roll planning app that helps photographers make confident, intentional decisions about their film stock before every shoot.
+
+## Features
+
+- **Smart Recommendations**: Algorithm-based film stock recommendations considering light, environment, intent, and weather conditions
+- **Weather Integration**: Real-time weather data to optimize film selection
+- **Roll Tracking**: Lock and track your film rolls with sequential numbering
+- **Dark/Light Mode**: Machined metal aesthetic with full theme support
+- **Mobile-First**: Responsive design optimized for on-the-go use
+
+## Tech Stack
+
+- **Framework**: Next.js 16.1.4 with Turbopack
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4 + Custom CSS design system
+- **APIs**: Open-Meteo (weather), Geolocation
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Design Philosophy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Roll Planner draws inspiration from premium hardware interfaces like the Teenage Engineering OP-1 and Leica cameras. The machined metal aesthetic emphasizes:
 
-## Learn More
+- Tactile physicality and precision
+- Utilitarian beauty
+- Purposeful restraint
+- Orange accent for interactive elements only
 
-To learn more about Next.js, take a look at the following resources:
+## Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [VISION.md](./VISION.md) - Mission, philosophy, and target user
+- [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) - Complete design system reference
+- [PROJECT-STRUCTURE.md](./PROJECT-STRUCTURE.md) - Architecture overview
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
+Deploy to [Vercel](https://vercel.com) for best performance with Next.js.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private project.
