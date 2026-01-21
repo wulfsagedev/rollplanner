@@ -234,3 +234,167 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
     return 'Current Location';
   }
 }
+
+// ============================================
+// LOCATION SEARCH (Forward geocoding)
+// ============================================
+
+export interface LocationResult {
+  name: string;
+  displayName: string;
+  lat: number;
+  lon: number;
+}
+
+export async function searchLocations(query: string): Promise<LocationResult[]> {
+  if (!query || query.length < 2) return [];
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'RollPlanner/1.0' }
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return data.map((item: { display_name: string; lat: string; lon: string; name?: string }) => ({
+      name: item.name || item.display_name.split(',')[0],
+      displayName: item.display_name,
+      lat: parseFloat(item.lat),
+      lon: parseFloat(item.lon)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ============================================
+// FORECAST WEATHER (for planned shoots)
+// ============================================
+
+interface OpenMeteoForecastResponse {
+  hourly: {
+    time: string[];
+    cloud_cover: number[];
+    visibility: number[];
+    weather_code: number[];
+  };
+  daily: {
+    sunrise: string[];
+    sunset: string[];
+  };
+}
+
+export async function fetchForecastWeather(
+  latitude: number,
+  longitude: number,
+  targetDate: Date
+): Promise<WeatherData | null> {
+  try {
+    // Format date for API
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    const url = new URL(WEATHER_API);
+    url.searchParams.set('latitude', latitude.toString());
+    url.searchParams.set('longitude', longitude.toString());
+    url.searchParams.set('hourly', 'cloud_cover,visibility,weather_code');
+    url.searchParams.set('daily', 'sunrise,sunset');
+    url.searchParams.set('timezone', 'auto');
+    url.searchParams.set('start_date', dateStr);
+    url.searchParams.set('end_date', dateStr);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error('Forecast fetch failed');
+
+    const data: OpenMeteoForecastResponse = await response.json();
+
+    // Find the hour closest to target time
+    const targetHour = targetDate.getHours();
+    const hourIndex = Math.min(targetHour, data.hourly.time.length - 1);
+
+    const sunrise = new Date(data.daily.sunrise[0]);
+    const sunset = new Date(data.daily.sunset[0]);
+
+    // Determine if target time is during day
+    const targetTime = new Date(data.hourly.time[hourIndex]);
+    const isDay = targetTime >= sunrise && targetTime <= sunset;
+
+    const weatherInfo = WEATHER_CODES[data.hourly.weather_code[hourIndex]] ||
+      { condition: 'Unknown', description: 'Unknown conditions' };
+
+    const sunPosition = getSunPosition(targetDate, sunrise, sunset, isDay);
+    const visibility = (data.hourly.visibility[hourIndex] || 10000) / 1000;
+    const cloudCover = data.hourly.cloud_cover[hourIndex] || 0;
+
+    const lightQuality = getLightQuality(
+      cloudCover,
+      visibility,
+      sunPosition,
+      data.hourly.weather_code[hourIndex]
+    );
+
+    const shootingNote = getShootingNote(
+      cloudCover,
+      visibility,
+      sunPosition,
+      data.hourly.weather_code[hourIndex]
+    );
+
+    // Get location name via reverse geocoding
+    const locationName = await reverseGeocode(latitude, longitude);
+
+    return {
+      conditions: weatherInfo.condition,
+      description: weatherInfo.description,
+      cloudCover,
+      visibility: Math.round(visibility * 10) / 10,
+      sunPosition,
+      lightQuality,
+      shootingNote,
+      locationName,
+      updatedAt: Date.now(),
+    };
+  } catch (error) {
+    console.error('Forecast fetch error:', error);
+    return null;
+  }
+}
+
+// Get sunrise/sunset times for a location and date
+export async function getSunTimes(
+  latitude: number,
+  longitude: number,
+  date: Date
+): Promise<{ sunrise: Date; sunset: Date; goldenMorning: Date; goldenEvening: Date } | null> {
+  try {
+    const dateStr = date.toISOString().split('T')[0];
+
+    const url = new URL(WEATHER_API);
+    url.searchParams.set('latitude', latitude.toString());
+    url.searchParams.set('longitude', longitude.toString());
+    url.searchParams.set('daily', 'sunrise,sunset');
+    url.searchParams.set('timezone', 'auto');
+    url.searchParams.set('start_date', dateStr);
+    url.searchParams.set('end_date', dateStr);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) return null;
+
+    const data = await response.json();
+
+    const sunrise = new Date(data.daily.sunrise[0]);
+    const sunset = new Date(data.daily.sunset[0]);
+
+    // Golden hour is roughly first/last hour of daylight
+    const dayLength = sunset.getTime() - sunrise.getTime();
+    const goldenDuration = dayLength * 0.1; // ~10% of day
+
+    const goldenMorning = new Date(sunrise.getTime() + goldenDuration / 2);
+    const goldenEvening = new Date(sunset.getTime() - goldenDuration / 2);
+
+    return { sunrise, sunset, goldenMorning, goldenEvening };
+  } catch {
+    return null;
+  }
+}

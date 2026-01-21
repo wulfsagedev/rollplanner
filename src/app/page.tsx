@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { useWeather } from '@/hooks/useWeather';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -8,6 +9,8 @@ import { Button } from '@/components/Button';
 import { SelectorCard } from '@/components/SelectorCard';
 import { GuidanceCard, GuidanceRow, MeteringTip } from '@/components/GuidanceCard';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
+import { ShootPlanner } from '@/components/ShootPlanner';
+import { WeatherData } from '@/lib/types';
 import {
   HarshLightIcon,
   BrightLightIcon,
@@ -49,7 +52,25 @@ export default function Home() {
     goBack
   } = useAppState();
 
-  const { weather, loading: weatherLoading, error: weatherError } = useWeather();
+  const { weather: currentWeather, loading: weatherLoading, error: weatherError } = useWeather();
+
+  // Planned shoot state
+  const [isPlanning, setIsPlanning] = useState(false);
+  const [plannedWeather, setPlannedWeather] = useState<WeatherData | null>(null);
+
+  // Use planned weather if planning, otherwise current weather
+  const weather = isPlanning && plannedWeather ? plannedWeather : currentWeather;
+
+  const handleForecastChange = useCallback((forecast: WeatherData | null) => {
+    setPlannedWeather(forecast);
+  }, []);
+
+  const handleModeChange = useCallback((planning: boolean) => {
+    setIsPlanning(planning);
+    if (!planning) {
+      setPlannedWeather(null);
+    }
+  }, []);
 
   return (
     <main className="app-container">
@@ -65,11 +86,19 @@ export default function Home() {
       {/* Conditions Screen */}
       {screen === 'conditions' && (
         <div className="screen">
-          {/* Weather Display */}
-          <WeatherDisplay
-            weather={weather}
-            loading={weatherLoading}
-            error={weatherError}
+          {/* Current Weather Display (when not planning) */}
+          {!isPlanning && (
+            <WeatherDisplay
+              weather={currentWeather}
+              loading={weatherLoading}
+              error={weatherError}
+            />
+          )}
+
+          {/* Shoot Planner */}
+          <ShootPlanner
+            onForecastChange={handleForecastChange}
+            onModeChange={handleModeChange}
           />
 
           {/* Film Toggles */}
