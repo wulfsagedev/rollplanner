@@ -301,43 +301,23 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
 }
 
 // ============================================
-// LOCATION SEARCH (Forward geocoding) - with caching
-// Prioritizes cities and populated places for better UX
+// LOCATION SEARCH (Forward geocoding) - Open-Meteo Geocoding API
+// Fast, accurate, no rate limits, sorted by population
 // ============================================
 
-interface NominatimResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-  name?: string;
-  type?: string;
-  class?: string;
-  importance?: number;
-  addresstype?: string;
+interface OpenMeteoGeoResult {
+  name: string;
+  latitude: number;
+  longitude: number;
+  country?: string;
+  country_code?: string;
+  admin1?: string;  // State/Province
+  admin2?: string;  // County/District
+  population?: number;
 }
 
-// Scoring function to prioritize cities and populated places
-function scoreLocationResult(item: NominatimResult): number {
-  let score = item.importance || 0;
-
-  // Boost populated places (cities, towns, villages)
-  const placeTypes = ['city', 'town', 'village', 'municipality', 'suburb', 'neighbourhood'];
-  if (item.addresstype && placeTypes.includes(item.addresstype)) {
-    score += 0.5;
-  }
-
-  // Boost if class is 'place' (indicates populated area)
-  if (item.class === 'place') {
-    score += 0.3;
-  }
-
-  // Penalize certain types that are likely not what users want
-  const penalizedTypes = ['amenity', 'shop', 'tourism', 'building', 'highway'];
-  if (item.class && penalizedTypes.includes(item.class)) {
-    score -= 0.3;
-  }
-
-  return score;
+interface OpenMeteoGeoResponse {
+  results?: OpenMeteoGeoResult[];
 }
 
 export async function searchLocations(query: string): Promise<LocationResult[]> {
@@ -351,40 +331,43 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
   if (cached) return cached;
 
   try {
-    // Use addressdetails to get better classification info
-    // Use featuretype=city,town,village to prefer populated places
+    // Open-Meteo Geocoding API - fast, accurate, sorted by population
     const params = new URLSearchParams({
-      q: query,
+      name: query,
+      count: '6',
+      language: 'en',
       format: 'json',
-      limit: '8',  // Get more results so we can re-rank them
-      addressdetails: '1',
-      'accept-language': 'en',  // Consistent English results
     });
 
-    const url = `https://nominatim.openstreetmap.org/search?${params}`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'RollPlanner/1.0' }
-    });
+    const url = `https://geocoding-api.open-meteo.com/v1/search?${params}`;
+    const response = await fetch(url);
 
     if (!response.ok) return [];
 
-    const data: NominatimResult[] = await response.json();
+    const data: OpenMeteoGeoResponse = await response.json();
 
-    // Score and sort results to prioritize cities/towns
-    const scoredResults = data
-      .map(item => ({
-        item,
-        score: scoreLocationResult(item)
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);  // Take top 5 after sorting
+    if (!data.results || data.results.length === 0) {
+      return [];
+    }
 
-    const results: LocationResult[] = scoredResults.map(({ item }) => ({
-      name: item.name || item.display_name.split(',')[0],
-      displayName: item.display_name,
-      lat: parseFloat(item.lat),
-      lon: parseFloat(item.lon)
-    }));
+    // Format results - already sorted by population/relevance
+    const results: LocationResult[] = data.results.map((item) => {
+      // Build display name: City, State/Province, Country
+      const parts = [item.name];
+      if (item.admin1 && item.admin1 !== item.name) {
+        parts.push(item.admin1);
+      }
+      if (item.country) {
+        parts.push(item.country);
+      }
+
+      return {
+        name: item.name,
+        displayName: parts.join(', '),
+        lat: item.latitude,
+        lon: item.longitude,
+      };
+    });
 
     // Cache the results
     setCache(cache.locations, cacheKey, results);
