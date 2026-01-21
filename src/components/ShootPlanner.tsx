@@ -13,16 +13,16 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-// Time slot configuration for cleaner rendering
+// Time slot configuration with photography-focused descriptions
 const TIME_SLOTS = [
-  { key: 'sunrise', label: 'Sunrise' },
-  { key: 'goldenMorning', label: 'Golden' },
-  { key: 'midMorning', label: 'Mid AM' },
-  { key: 'midday', label: 'Noon' },
-  { key: 'midAfternoon', label: 'Mid PM' },
-  { key: 'goldenEvening', label: 'Golden' },
-  { key: 'sunset', label: 'Sunset' },
-  { key: 'twilight', label: 'Dusk' },
+  { key: 'sunrise', label: 'Sunrise', desc: 'First Light' },
+  { key: 'goldenMorning', label: 'Golden AM', desc: 'Warm Tones' },
+  { key: 'midMorning', label: 'Morning', desc: 'Soft Light' },
+  { key: 'midday', label: 'Midday', desc: 'High Sun' },
+  { key: 'midAfternoon', label: 'Afternoon', desc: 'Angled Light' },
+  { key: 'goldenEvening', label: 'Golden PM', desc: 'Warm Tones' },
+  { key: 'sunset', label: 'Sunset', desc: 'Last Light' },
+  { key: 'twilight', label: 'Blue Hour', desc: 'Cool Tones' },
 ] as const;
 
 export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerProps) {
@@ -318,9 +318,10 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         )}
       </div>
 
-      {/* Date - Inline pills */}
+      {/* Date Selection */}
       {selectedLocation && (
-        <div className="shoot-planner-field">
+        <div className="shoot-planner-section">
+          <div className="shoot-planner-section-label">Date</div>
           <div className="shoot-planner-date-row">
             {availableDates.slice(0, 5).map(({ value, label }) => (
               <button
@@ -343,11 +344,12 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         </div>
       )}
 
-      {/* Time Grid - Clean 4x2 */}
+      {/* Time Selection */}
       {sunTimes && !isLoadingSunTimes && (
-        <div className="shoot-planner-field">
+        <div className="shoot-planner-section">
+          <div className="shoot-planner-section-label">Time</div>
           <div className="shoot-planner-times-grid">
-            {TIME_SLOTS.map(({ key, label }) => {
+            {TIME_SLOTS.map(({ key, label, desc }) => {
               const time = sunTimes[key as keyof SunTimes];
               const timeStr = formatTime(time);
               return (
@@ -355,6 +357,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
                   key={key}
                   onClick={() => setQuickTime(time)}
                   className={`shoot-planner-time-btn ${selectedTime === timeStr ? 'active' : ''}`}
+                  title={desc}
                 >
                   <span className="shoot-planner-time-value">{timeStr}</span>
                   <span className="shoot-planner-time-label">{label}</span>

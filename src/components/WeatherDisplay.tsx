@@ -53,9 +53,9 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
 
   const sunPositionLabel = {
     golden: 'Golden Hour',
-    high: 'Midday',
-    low: 'Low Sun',
-    twilight: 'Twilight',
+    high: 'High Sun',
+    low: 'Angled Light',
+    twilight: 'Blue Hour',
     night: 'Night',
   }[weather.sunPosition];
 

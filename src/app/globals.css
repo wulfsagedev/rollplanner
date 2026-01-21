@@ -1643,47 +1643,67 @@ body::before {
   margin-bottom: 0;
 }
 
-/* Location input - minimal */
+/* Section containers with labels */
+.shoot-planner-section {
+  margin-bottom: var(--space-4);
+}
+
+.shoot-planner-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.shoot-planner-section-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-2);
+}
+
+/* Location input - prominent */
 .shoot-planner-search {
   position: relative;
 }
 
 .shoot-planner-input {
   width: 100%;
-  padding: 10px 32px 10px 12px;
+  padding: 14px 36px 14px 14px;
   background: var(--bg);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-primary);
-  transition: border-color 0.1s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .shoot-planner-input:focus {
   outline: none;
   border-color: var(--led-on);
+  box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
 }
 
 .shoot-planner-input::placeholder {
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: 500;
 }
 
 .shoot-planner-status {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 /* Animated dots for searching */
@@ -2004,10 +2024,11 @@ body::before {
   padding: 12px;
   color: var(--text-light);
   transition: opacity 0.15s ease;
+  /* Fixed minimum height to prevent layout shift */
+  min-height: 110px;
 }
 
 .shoot-planner-forecast.loading {
-  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2171,7 +2192,12 @@ body::before {
 
 .dark .shoot-planner-input {
   background: #2a2a2c;
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .shoot-planner-input:focus {
+  border-color: var(--led-on);
+  box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.2);
 }
 
 .dark .shoot-planner-results {
