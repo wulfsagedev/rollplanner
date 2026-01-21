@@ -122,6 +122,10 @@
    BASE STYLES
    ============================================ */
 
+* {
+  box-sizing: border-box;
+}
+
 html, body {
   font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   background: var(--bg);
@@ -132,6 +136,9 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.4;
   letter-spacing: 0.02em;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 /* Simple, clean theme transition */
@@ -161,14 +168,21 @@ body::before {
    ============================================ */
 
 .app-container {
-  width: var(--max-width);
-  max-width: 100%;
+  width: 100%;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6) var(--space-6);
+  padding: var(--space-4) var(--space-4) var(--space-6);
   display: flex;
   flex-direction: column;
   position: relative;
   min-height: 100dvh;
+}
+
+/* Larger screens - more padding */
+@media (min-width: 420px) {
+  .app-container {
+    padding: var(--space-8) var(--space-6) var(--space-6);
+  }
 }
 
 /* ============================================
@@ -277,9 +291,15 @@ body::before {
 
 .film-toggles-row {
   display: flex;
-  gap: var(--space-6);
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
   justify-content: center;
+}
+
+@media (min-width: 380px) {
+  .film-toggles-row {
+    gap: var(--space-6);
+  }
 }
 
 .toggle-switch {
@@ -401,13 +421,29 @@ body::before {
 }
 
 .selector-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-.selector-options.cols-4 {
-  grid-template-columns: repeat(4, 1fr);
+.selector-options .selector-option {
+  flex: 1 1 calc(33.333% - var(--space-2));
+  min-width: 0;
+}
+
+.selector-options.cols-4 .selector-option {
+  flex: 1 1 calc(25% - var(--space-2));
+}
+
+/* Ensure buttons fill remaining space evenly */
+@media (max-width: 380px) {
+  .selector-options .selector-option {
+    flex: 1 1 calc(33.333% - var(--space-2));
+  }
+
+  .selector-options.cols-4 .selector-option {
+    flex: 1 1 calc(50% - var(--space-2));
+  }
 }
 
 /* ============================================
@@ -416,14 +452,14 @@ body::before {
 
 .selector-option {
   position: relative;
-  padding: var(--space-4);
-  min-height: 76px;
+  padding: var(--space-3);
+  min-height: 68px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 
   background: #f0f0f2;
   border: none;
@@ -1214,8 +1250,38 @@ body::before {
   display: flex;
   flex-direction: column;
   flex: 1;
+  width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .screen { transition: none; }
+}
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY
+   ============================================ */
+
+@media (max-width: 360px) {
+  .app-title {
+    font-size: var(--text-md);
+  }
+
+  .selector-label {
+    font-size: 10px;
+  }
+
+  .selector-option {
+    font-size: 10px;
+    padding: var(--space-2);
+    min-height: 60px;
+  }
+
+  .selector-option .option-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .toggle-label {
+    font-size: 10px;
+  }
 }
