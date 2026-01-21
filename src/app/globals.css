@@ -1661,6 +1661,78 @@ body::before {
   color: var(--led-on);
 }
 
+/* Time preset grid - 4 columns for 8 time slots */
+.shoot-planner-times-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.shoot-planner-time-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) var(--space-1);
+  background: var(--bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shoot-planner-time-btn:hover {
+  background: var(--bg-inset);
+  border-color: var(--text-tertiary);
+}
+
+.shoot-planner-time-btn.active {
+  background: var(--cavity);
+  border-color: var(--led-on);
+  box-shadow: 0 0 8px var(--led-on-glow);
+}
+
+.shoot-planner-time-value {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.shoot-planner-time-btn.active .shoot-planner-time-value {
+  color: var(--led-on);
+}
+
+.shoot-planner-time-label {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.shoot-planner-time-btn.active .shoot-planner-time-label {
+  color: var(--text-light-secondary);
+}
+
+/* Dark mode time buttons */
+.dark .shoot-planner-time-btn {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .shoot-planner-time-btn:hover {
+  background: #3a3a3e;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .shoot-planner-time-btn.active {
+  background: var(--cavity);
+  border-color: var(--led-on);
+}
+
 .shoot-planner-loading {
   padding: var(--space-4);
   text-align: center;

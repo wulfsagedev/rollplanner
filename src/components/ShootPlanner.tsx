@@ -2,19 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeatherData } from '@/lib/types';
-import { searchLocations, fetchForecastWeather, getSunTimes, LocationResult } from '@/lib/weather';
+import { searchLocations, fetchForecastWeather, getSunTimes, LocationResult, SunTimes } from '@/lib/weather';
 
 interface ShootPlannerProps {
   onForecastChange: (weather: WeatherData | null) => void;
   onModeChange: (isPlanning: boolean) => void;
 }
 
-interface SunTimes {
-  sunrise: Date;
-  sunset: Date;
-  goldenMorning: Date;
-  goldenEvening: Date;
-}
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -293,46 +287,70 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         </select>
       </div>
 
-      {/* Time Selector */}
-      <div className="shoot-planner-field">
-        <label className="shoot-planner-label">Time</label>
-        <input
-          type="time"
-          value={selectedTime}
-          onChange={(e) => setSelectedTime(e.target.value)}
-          className="shoot-planner-input"
-        />
-
-        {/* Quick Time Buttons - show when location is selected */}
-        {sunTimes && (
-          <div className="shoot-planner-quick-times">
+      {/* Time Selector - Preset times only */}
+      {sunTimes && (
+        <div className="shoot-planner-field">
+          <label className="shoot-planner-label">Time</label>
+          <div className="shoot-planner-times-grid">
+            <button
+              onClick={() => setQuickTime(sunTimes.sunrise)}
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.sunrise) ? 'active' : ''}`}
+            >
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.sunrise)}</span>
+              <span className="shoot-planner-time-label">Sunrise</span>
+            </button>
             <button
               onClick={() => setQuickTime(sunTimes.goldenMorning)}
-              className="shoot-planner-quick-btn"
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.goldenMorning) ? 'active' : ''}`}
             >
-              {formatTimeOption(sunTimes.goldenMorning, 'Golden AM')}
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.goldenMorning)}</span>
+              <span className="shoot-planner-time-label">Golden AM</span>
+            </button>
+            <button
+              onClick={() => setQuickTime(sunTimes.midMorning)}
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midMorning) ? 'active' : ''}`}
+            >
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.midMorning)}</span>
+              <span className="shoot-planner-time-label">Mid Morning</span>
+            </button>
+            <button
+              onClick={() => setQuickTime(sunTimes.midday)}
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midday) ? 'active' : ''}`}
+            >
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.midday)}</span>
+              <span className="shoot-planner-time-label">Midday</span>
+            </button>
+            <button
+              onClick={() => setQuickTime(sunTimes.midAfternoon)}
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.midAfternoon) ? 'active' : ''}`}
+            >
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.midAfternoon)}</span>
+              <span className="shoot-planner-time-label">Mid Afternoon</span>
             </button>
             <button
               onClick={() => setQuickTime(sunTimes.goldenEvening)}
-              className="shoot-planner-quick-btn"
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.goldenEvening) ? 'active' : ''}`}
             >
-              {formatTimeOption(sunTimes.goldenEvening, 'Golden PM')}
-            </button>
-            <button
-              onClick={() => setQuickTime(sunTimes.sunrise)}
-              className="shoot-planner-quick-btn"
-            >
-              {formatTimeOption(sunTimes.sunrise, 'Sunrise')}
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.goldenEvening)}</span>
+              <span className="shoot-planner-time-label">Golden PM</span>
             </button>
             <button
               onClick={() => setQuickTime(sunTimes.sunset)}
-              className="shoot-planner-quick-btn"
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.sunset) ? 'active' : ''}`}
             >
-              {formatTimeOption(sunTimes.sunset, 'Sunset')}
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.sunset)}</span>
+              <span className="shoot-planner-time-label">Sunset</span>
+            </button>
+            <button
+              onClick={() => setQuickTime(sunTimes.twilight)}
+              className={`shoot-planner-time-btn ${selectedTime === formatTime(sunTimes.twilight) ? 'active' : ''}`}
+            >
+              <span className="shoot-planner-time-value">{formatTime(sunTimes.twilight)}</span>
+              <span className="shoot-planner-time-label">Twilight</span>
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Forecast Display */}
       {loading && (

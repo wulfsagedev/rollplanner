@@ -361,12 +361,24 @@ export async function fetchForecastWeather(
   }
 }
 
+// Sun times interface with all photography-relevant times
+export interface SunTimes {
+  sunrise: Date;
+  sunset: Date;
+  goldenMorning: Date;
+  goldenEvening: Date;
+  midMorning: Date;
+  midday: Date;
+  midAfternoon: Date;
+  twilight: Date;
+}
+
 // Get sunrise/sunset times for a location and date
 export async function getSunTimes(
   latitude: number,
   longitude: number,
   date: Date
-): Promise<{ sunrise: Date; sunset: Date; goldenMorning: Date; goldenEvening: Date } | null> {
+): Promise<SunTimes | null> {
   try {
     const dateStr = date.toISOString().split('T')[0];
 
@@ -386,14 +398,27 @@ export async function getSunTimes(
     const sunrise = new Date(data.daily.sunrise[0]);
     const sunset = new Date(data.daily.sunset[0]);
 
-    // Golden hour is roughly first/last hour of daylight
+    // Calculate key times throughout the day
     const dayLength = sunset.getTime() - sunrise.getTime();
     const goldenDuration = dayLength * 0.1; // ~10% of day
 
+    // Golden hours - shortly after sunrise / before sunset
     const goldenMorning = new Date(sunrise.getTime() + goldenDuration / 2);
     const goldenEvening = new Date(sunset.getTime() - goldenDuration / 2);
 
-    return { sunrise, sunset, goldenMorning, goldenEvening };
+    // Mid morning - 25% through the day
+    const midMorning = new Date(sunrise.getTime() + dayLength * 0.25);
+
+    // Midday - 50% through the day (solar noon)
+    const midday = new Date(sunrise.getTime() + dayLength * 0.5);
+
+    // Mid afternoon - 75% through the day
+    const midAfternoon = new Date(sunrise.getTime() + dayLength * 0.75);
+
+    // Twilight - 30 min after sunset
+    const twilight = new Date(sunset.getTime() + 30 * 60 * 1000);
+
+    return { sunrise, sunset, goldenMorning, goldenEvening, midMorning, midday, midAfternoon, twilight };
   } catch {
     return null;
   }
