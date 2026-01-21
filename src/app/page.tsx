@@ -117,14 +117,14 @@ export default function Home() {
       {/* Conditions Screen */}
       {screen === 'conditions' && (
         <div className="screen">
-          {/* Current Weather Display (when not planning) */}
-          {!isPlanning && (
+          {/* Current Weather Display (hidden when planning) */}
+          <div className={`weather-wrapper ${isPlanning ? 'hiding' : ''}`}>
             <WeatherDisplay
               weather={currentWeather}
               loading={weatherLoading}
               error={weatherError}
             />
-          )}
+          </div>
 
           {/* Shoot Planner */}
           <ShootPlanner
@@ -149,29 +149,27 @@ export default function Home() {
           </div>
 
           {/* Light Selector - hidden when planning (forecast provides light info) */}
-          {!isPlanning && (
-            <div className="selector-group">
-              <div className="selector-label">Light</div>
-              <div className="selector-options">
-                {([
-                  { value: 'harsh', label: 'Harsh', icon: HarshLightIcon },
-                  { value: 'bright', label: 'Bright', icon: BrightLightIcon },
-                  { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
-                  { value: 'flat', label: 'Flat', icon: FlatLightIcon },
-                  { value: 'dim', label: 'Dim', icon: DimLightIcon },
-                  { value: 'dark', label: 'Dark', icon: DarkLightIcon }
-                ] as const).map(({ value, label, icon: Icon }) => (
-                  <SelectorCard
-                    key={value}
-                    icon={<Icon className="w-full h-full" />}
-                    label={label}
-                    selected={state.light === value}
-                    onClick={() => setLight(state.light === value ? null : value)}
-                  />
-                ))}
-              </div>
+          <div className={`selector-group ${isPlanning ? 'hiding' : ''}`}>
+            <div className="selector-label">Light</div>
+            <div className="selector-options">
+              {([
+                { value: 'harsh', label: 'Harsh', icon: HarshLightIcon },
+                { value: 'bright', label: 'Bright', icon: BrightLightIcon },
+                { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
+                { value: 'flat', label: 'Flat', icon: FlatLightIcon },
+                { value: 'dim', label: 'Dim', icon: DimLightIcon },
+                { value: 'dark', label: 'Dark', icon: DarkLightIcon }
+              ] as const).map(({ value, label, icon: Icon }) => (
+                <SelectorCard
+                  key={value}
+                  icon={<Icon className="w-full h-full" />}
+                  label={label}
+                  selected={state.light === value}
+                  onClick={() => setLight(state.light === value ? null : value)}
+                />
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Environment Selector */}
           <div className="selector-group">
@@ -222,13 +220,13 @@ export default function Home() {
           {/* Spacer */}
           <div className="spacer" />
 
-          {/* Get Recommendation Button */}
+          {/* Plan Roll Button */}
           <Button
             onClick={getRecommendation}
             disabled={!canGetRecommendation}
             pulse={canGetRecommendation}
           >
-            Get Recommendation
+            Plan Roll
           </Button>
         </div>
       )}
