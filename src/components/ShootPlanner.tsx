@@ -80,10 +80,10 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     setIsLoadingSunTimes(false);
     if (times) {
       setSunTimes(times);
-      // Auto-select golden evening as default (most popular shoot time)
-      setSelectedTime(formatTime(times.goldenEvening));
-      setSelectedTimeSlot('goldenEvening');
-      onTimeOfDayChange?.('golden');
+      // Auto-select midday as default (shows default theme, users discover dynamic theming when switching)
+      setSelectedTime(formatTime(times.midday));
+      setSelectedTimeSlot('midday');
+      onTimeOfDayChange?.('day');
     }
   }, [selectedDate, onTimeOfDayChange]);
 
