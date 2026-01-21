@@ -734,6 +734,18 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Smooth scrolling for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Smooth theme transitions - always enabled for key properties */
 html {
   transition: background-color 0.4s ease;

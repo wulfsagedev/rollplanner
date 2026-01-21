@@ -94,6 +94,8 @@ export function useAppState() {
 
     setState(prev => ({ ...prev, recommendation }));
     setScreen('recommendation');
+    // Scroll to top on screen change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.light, state.environment, state.intent, state.weather, state.filmType, state.filmFormat]);
 
   // Lock the roll
@@ -112,6 +114,8 @@ export function useAppState() {
     setState(newState);
     localStorage.setItem('rollplanner_current', JSON.stringify(newState));
     setScreen('locked');
+    // Scroll to top on screen change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state]);
 
   // Start over
@@ -119,11 +123,15 @@ export function useAppState() {
     localStorage.removeItem('rollplanner_current');
     setState(initialState);
     setScreen('conditions');
+    // Scroll to top on screen change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   // Go back to conditions
   const goBack = useCallback(() => {
     setScreen('conditions');
+    // Scroll to top on screen change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   return {

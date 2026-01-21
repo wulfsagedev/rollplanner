@@ -123,6 +123,8 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     setSearchResults([]);
     setIsLoadingSunTimes(true);
     setForecastCache(new Map()); // Clear cache for new location
+    // Blur input to dismiss mobile keyboard
+    inputRef.current?.blur();
 
     // Fetch sun times for the selected location
     const date = new Date(selectedDate);
@@ -398,6 +400,8 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
+            enterKeyHint="search"
+            inputMode="search"
             onFocus={() => searchResults.length > 0 && !selectedLocation && setShowResults(true)}
             onBlur={() => setTimeout(() => setShowResults(false), 150)}
           />
