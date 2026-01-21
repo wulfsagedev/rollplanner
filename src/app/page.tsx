@@ -206,7 +206,7 @@ export default function Home() {
 
           {/* Exposure Settings */}
           {(() => {
-            const exposure = getExposureGuidance(state.light, state.recommendation.ei, state.environment);
+            const exposure = getExposureGuidance(state.light, state.recommendation.ei, state.environment, weather);
             return (
               <GuidanceCard
                 icon={<ExposureIcon className="w-full h-full" />}
@@ -222,7 +222,7 @@ export default function Home() {
 
           {/* Metering Tips */}
           {(() => {
-            const metering = getMeteringTips(state.light, state.environment, state.intent);
+            const metering = getMeteringTips(state.light, state.environment, state.intent, weather);
             return (
               <GuidanceCard
                 icon={<MeteringIcon className="w-full h-full" />}

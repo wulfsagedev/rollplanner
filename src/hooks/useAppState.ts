@@ -87,7 +87,7 @@ export function useAppState() {
       state.light,
       state.environment,
       state.intent,
-      state.weather?.conditions || null,
+      state.weather, // Pass full weather data for optimized algorithm
       state.filmType,
       state.filmFormat
     );
