@@ -1,11 +1,13 @@
 'use client';
 
 import { useAppState } from '@/hooks/useAppState';
+import { useWeather } from '@/hooks/useWeather';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Toggle } from '@/components/Toggle';
 import { Button } from '@/components/Button';
 import { SelectorCard } from '@/components/SelectorCard';
 import { GuidanceCard, GuidanceRow, MeteringTip } from '@/components/GuidanceCard';
+import { WeatherDisplay } from '@/components/WeatherDisplay';
 import {
   HarshLightIcon,
   BrightLightIcon,
@@ -44,6 +46,8 @@ export default function Home() {
     goBack
   } = useAppState();
 
+  const { weather, loading: weatherLoading, error: weatherError } = useWeather();
+
   return (
     <main className="min-h-[100dvh] flex justify-center">
       <div className="w-full max-w-[440px] px-6 py-6 flex flex-col">
@@ -56,6 +60,13 @@ export default function Home() {
         {/* Conditions Screen */}
         {screen === 'conditions' && (
           <div className="flex flex-col flex-1">
+            {/* Weather Display */}
+            <WeatherDisplay
+              weather={weather}
+              loading={weatherLoading}
+              error={weatherError}
+            />
+
             {/* Film Toggles */}
             <div className="flex justify-center gap-6 mb-6">
               <Toggle

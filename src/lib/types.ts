@@ -73,10 +73,15 @@ export interface MeteringTips {
 }
 
 export interface WeatherData {
-  temperature: number;
   conditions: string;
+  description: string;
   cloudCover: number;
+  visibility: number; // in km
+  sunPosition: 'golden' | 'high' | 'low' | 'twilight' | 'night';
+  lightQuality: string;
+  shootingNote: string;
   locationName: string;
+  updatedAt: number;
 }
 
 export interface AppState {
