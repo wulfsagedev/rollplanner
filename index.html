@@ -98,7 +98,8 @@
 
         .dark {
             --bg: #2c2c2e;
-            --bg-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            --bg-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            --bg-grain-opacity: 0.015;
 
             --cavity: #0f0f10;
             --cavity-floor: #080809;
@@ -119,7 +120,7 @@
         }
 
         html, body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
             background: var(--bg);
             color: var(--text-primary);
             min-height: 100vh;
@@ -127,7 +128,15 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             line-height: 1.4;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.02em;
+        }
+
+        /* Simple, clean theme transition */
+        .theme-transitioning,
+        .theme-transitioning *,
+        .theme-transitioning *::before,
+        .theme-transitioning *::after {
+            transition: all 0.5s ease !important;
         }
 
         /* Aluminum grain texture overlay */
@@ -139,27 +148,51 @@
             width: 100%;
             height: 100%;
             background: var(--bg-grain);
-            opacity: 0.03;
+            opacity: var(--bg-grain-opacity, 0.03);
             pointer-events: none;
             z-index: 10000;
         }
 
         .app {
-            max-width: var(--max-width);
+            width: var(--max-width);
+            max-width: 100%;
             margin: 0 auto;
-            padding: 0 var(--space-6);
-            min-height: 100vh;
-            min-height: 100dvh;
+            padding: var(--space-8) var(--space-6) var(--space-6);
             display: flex;
             flex-direction: column;
             position: relative;
         }
 
+        /* Persistent header - always visible across all screens */
+        .persistent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+            padding-top: var(--space-2);
+        }
+
+        /* Screen header row - for back button and screen title */
+        .screen-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+        }
+
+        .screen-title {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-engraved);
+            margin: 0;
+        }
+
         .screen {
             display: none;
             flex-direction: column;
-            flex: 1;
-            padding: var(--space-10) 0 var(--space-8);
+            padding: 0 0 var(--space-6);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
@@ -174,33 +207,30 @@
         }
 
         /* ============================================
-           HEADER — Engraved text
+           APP TITLE — Persistent header
            ============================================ */
-        .header {
-            margin-bottom: var(--space-8);
+        .app-title {
+            font-size: var(--text-lg);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin: 0;
         }
 
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--space-1);
+        /* Section title - for "Set the conditions" */
+        .conditions-section {
+            margin-bottom: var(--space-5);
         }
 
-        .header h1 {
-            font-size: var(--text-xs);
-            font-weight: 600;
-            letter-spacing: 0.08em;
+        .section-title {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
             color: var(--text-engraved);
             text-shadow: 0 1px 0 var(--bevel-light);
-        }
-
-        .header h2 {
-            font-size: var(--text-xl);
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: var(--text-primary);
+            margin: 0;
         }
 
         /* ============================================
@@ -258,10 +288,16 @@
             stroke-width: 1.5;
         }
 
-        .theme-toggle .sun-icon { display: block; }
+        .theme-toggle .sun-icon {
+            display: block;
+            color: var(--text-secondary);
+        }
         .theme-toggle .moon-icon { display: none; }
         .dark .theme-toggle .sun-icon { display: none; }
-        .dark .theme-toggle .moon-icon { display: block; }
+        .dark .theme-toggle .moon-icon {
+            display: block;
+            color: var(--text-light-secondary);
+        }
 
         /* Dark mode theme toggle adjustments */
         .dark .theme-toggle {
@@ -294,7 +330,7 @@
 
         .selector-label {
             font-size: var(--text-xs);
-            font-weight: 700;
+            font-weight: 500;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--text-secondary);
@@ -338,8 +374,10 @@
                 /* Soft ambient shadow */
                 0 4px 8px rgba(0, 0, 0, 0.1);
 
-            font-size: var(--text-sm);
+            font-size: var(--text-xs);
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-secondary);
             cursor: pointer;
             user-select: none;
@@ -355,8 +393,8 @@
 
         /* LED Icon — Off state (dark, inactive) */
         .selector-option .option-icon {
-            width: 24px;
-            height: 24px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -417,26 +455,27 @@
             outline-offset: 2px;
         }
 
-        /* Selected state — Depressed into softer dark grey */
+        /* Selected state — Slightly clicked in, like a latching button */
         .selector-option.selected {
-            transform: translateY(3px);
-            background: #4a4a4e;
+            /* Tiny click down - just 1px */
+            transform: translateY(1px);
+            /* Almost same color, just a touch darker */
+            background: #ebebef;
             box-shadow:
-                /* Softer inset shadow — pressed into surface */
-                inset 0 2px 6px rgba(0, 0, 0, 0.4),
-                inset 0 1px 2px rgba(0, 0, 0, 0.25),
-                /* No drop shadow — button is flush/recessed */
-                0 0 0 transparent;
-            color: var(--text-light);
+                /* Keep the top highlight */
+                inset 0 1px 0 rgba(255, 255, 255, 0.6),
+                /* Bottom inner edge */
+                inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+                /* Drop shadow reduced by 1px — shows the slight press */
+                0 2px 0 #c0c0c4,
+                0 3px 6px rgba(0, 0, 0, 0.08);
+            color: var(--text-secondary);
         }
 
-        /* LED Icon — On state (warm orange glow) */
+        /* LED Icon — On state (tight local glow) */
         .selector-option.selected .option-icon {
             color: var(--led-on);
-            filter:
-                drop-shadow(0 0 3px var(--led-on-glow))
-                drop-shadow(0 0 8px var(--led-on-glow))
-                drop-shadow(0 0 12px rgba(255, 149, 0, 0.3));
+            filter: drop-shadow(0 0 2px var(--led-on-glow));
         }
 
         /* LED indicator dot — glowing when selected */
@@ -444,19 +483,69 @@
             background: var(--led-on);
             opacity: 1;
             box-shadow:
-                0 0 4px var(--led-on),
-                0 0 8px var(--led-on-glow),
-                0 0 12px var(--led-on-glow);
+                0 0 2px var(--led-on),
+                0 0 4px var(--led-on-glow);
         }
 
-        /* Subtle edge glow on selected */
-        .selector-option.selected::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: var(--radius-md);
-            box-shadow: inset 0 0 0 1px rgba(255, 149, 0, 0.2);
-            pointer-events: none;
+        /* Dark mode selector options */
+        .dark .selector-option {
+            background: #3a3a3e;
+            color: #a8a8ac;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                0 3px 0 #1a1a1c,
+                0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .dark .selector-option .option-icon {
+            color: #68686c;
+        }
+
+        .dark .selector-option::after {
+            background: #2a2a2c;
+        }
+
+        .dark .selector-option:hover {
+            background: #454548;
+            color: #d0d0d4;
+        }
+
+        .dark .selector-option:hover .option-icon {
+            color: #888888;
+        }
+
+        .dark .selector-option:active {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.04),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 1px 0 #0f0f10,
+                0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .dark .selector-option.selected {
+            /* Almost same, just a touch darker */
+            background: #363639;
+            color: var(--text-light-secondary);
+            box-shadow:
+                /* Keep the top highlight */
+                inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                /* Drop shadow reduced by 1px */
+                0 2px 0 #1a1a1c,
+                0 3px 6px rgba(0, 0, 0, 0.35);
+        }
+
+        .dark .selector-option.selected .option-icon {
+            color: var(--led-on);
+            filter: drop-shadow(0 0 3px rgba(255, 149, 0, 0.5));
+        }
+
+        .dark .selector-option.selected::after {
+            background: var(--led-on);
+            box-shadow:
+                0 0 3px var(--led-on),
+                0 0 6px rgba(255, 149, 0, 0.4);
         }
 
         /* ============================================
@@ -466,14 +555,16 @@
             width: 100%;
             padding: var(--space-4) var(--space-6);
             min-height: 54px;
-            margin-top: auto;
+            margin-top: var(--space-6);
 
             background: #f0f0f2;
             border: none;
             border-radius: var(--radius-md);
 
-            font-size: var(--text-md);
-            font-weight: 600;
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-primary);
 
             cursor: pointer;
@@ -514,14 +605,20 @@
         }
 
         .btn-primary:disabled {
-            background: #d8d8dc;
-            color: var(--text-tertiary);
+            background: #e8e8ec;
+            color: #a0a0a4;
             cursor: not-allowed;
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                0 2px 0 #b8b8bc,
+                0 2px 0 #c8c8cc,
                 0 3px 6px rgba(0, 0, 0, 0.06);
             transform: translateY(0);
+        }
+
+        /* Active (enabled) state — matches card icon glow */
+        .btn-primary:not(:disabled) {
+            color: var(--led-on);
+            text-shadow: 0 0 2px var(--led-on-glow);
         }
 
         /* Dark mode primary button */
@@ -529,31 +626,36 @@
             background: #3a3a3e;
             color: var(--text-light);
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.2),
                 0 3px 0 #1a1a1c,
-                0 4px 8px rgba(0, 0, 0, 0.3);
+                0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .dark .btn-primary:not(:disabled) {
+            color: var(--led-on);
+            text-shadow: 0 0 2px var(--led-on-glow);
         }
 
         .dark .btn-primary:hover {
-            background: #4a4a4e;
+            background: #454548;
         }
 
         .dark .btn-primary:active {
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.3),
                 0 1px 0 #0f0f10,
-                0 2px 4px rgba(0, 0, 0, 0.3);
+                0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
         .dark .btn-primary:disabled {
-            background: #2a2a2e;
-            color: var(--text-tertiary);
+            background: #2a2a2c;
+            color: #58585c;
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04),
                 0 2px 0 #1a1a1c,
-                0 3px 6px rgba(0, 0, 0, 0.2);
+                0 3px 6px rgba(0, 0, 0, 0.3);
         }
 
         /* ============================================
@@ -568,8 +670,10 @@
             border: none;
             border-radius: var(--radius-md);
 
-            font-size: var(--text-md);
-            font-weight: 600;
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-secondary);
 
             cursor: pointer;
@@ -650,16 +754,19 @@
         }
 
         .film-stock {
-            font-size: var(--text-xl);
-            font-weight: 700;
-            letter-spacing: -0.02em;
+            font-size: var(--text-lg);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             color: #ffffff;
             margin-bottom: var(--space-2);
         }
 
         .film-ei {
-            font-size: var(--text-md);
-            font-weight: 600;
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--accent);
             margin-bottom: var(--space-5);
         }
@@ -680,7 +787,7 @@
 
         .film-detail-label {
             font-size: var(--text-xs);
-            font-weight: 700;
+            font-weight: 500;
             letter-spacing: 0.06em;
             text-transform: uppercase;
             color: #a8a8ac;
@@ -688,21 +795,169 @@
         }
 
         .film-detail-value {
-            font-size: var(--text-md);
+            font-size: var(--text-sm);
             font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
             color: #f0f0f2;
             line-height: 1.6;
         }
 
         .film-discipline {
-            font-size: var(--text-base);
-            font-style: italic;
+            font-size: var(--text-xs);
+            font-style: normal;
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: #a8a8ac;
             text-align: center;
             padding-top: var(--space-5);
             margin-top: var(--space-5);
             border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* ============================================
+           GUIDANCE CARDS
+           ============================================ */
+        .guidance-card {
+            background: var(--bg-inset);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            margin-bottom: var(--space-4);
+            box-shadow:
+                inset 0 1px 3px rgba(0, 0, 0, 0.06),
+                0 1px 0 var(--bevel-light);
+        }
+
+        .guidance-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-3);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .guidance-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+        }
+
+        .guidance-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .guidance-title {
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .guidance-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .guidance-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .guidance-label {
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        .guidance-value {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .guidance-note {
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-top: var(--space-3);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-subtle);
+            line-height: 1.5;
+        }
+
+        .metering-tips {
+            gap: var(--space-4);
+        }
+
+        .metering-tip {
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding-left: var(--space-3);
+            border-left: 2px solid var(--text-primary);
+        }
+
+        .metering-tip.secondary {
+            color: var(--text-secondary);
+            border-left-color: var(--border-strong);
+        }
+
+        /* Dark mode guidance cards */
+        .dark .guidance-card {
+            background: #3a3a3e;
+            box-shadow:
+                inset 0 1px 3px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .dark .guidance-header {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .guidance-icon {
+            color: #a8a8ac;
+        }
+
+        .dark .guidance-title {
+            color: #a8a8ac;
+        }
+
+        .dark .guidance-label {
+            color: #78787c;
+        }
+
+        .dark .guidance-value {
+            color: #f0f0f2;
+        }
+
+        .dark .guidance-note {
+            color: #78787c;
+            border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .metering-tip {
+            color: #f0f0f2;
+            border-left-color: #f0f0f2;
+        }
+
+        .dark .metering-tip.secondary {
+            color: #a8a8ac;
+            border-left-color: rgba(255, 255, 255, 0.2);
         }
 
         /* ============================================
@@ -717,12 +972,13 @@
            BACK LINK
            ============================================ */
         .back-link {
-            font-size: var(--text-base);
-            font-weight: 600;
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-secondary);
             text-decoration: none;
             cursor: pointer;
-            margin-bottom: var(--space-4);
             display: inline-flex;
             align-items: center;
             gap: var(--space-2);
@@ -765,16 +1021,9 @@
         /* ============================================
            LOCKED SCREEN
            ============================================ */
-        .locked-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: var(--space-6);
-        }
-
         .locked-meta {
-            font-size: var(--text-sm);
-            font-weight: 700;
+            font-size: var(--text-xs);
+            font-weight: 500;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--text-secondary);
@@ -782,8 +1031,10 @@
         }
 
         .locked-date {
-            font-size: var(--text-sm);
+            font-size: var(--text-xs);
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-secondary);
         }
 
@@ -793,17 +1044,20 @@
         }
 
         .locked-film-name {
-            font-size: var(--text-2xl);
-            font-weight: 700;
+            font-size: var(--text-xl);
+            font-weight: 500;
             color: var(--text-primary);
-            letter-spacing: -0.03em;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             line-height: 1.1;
             margin-bottom: var(--space-3);
         }
 
         .locked-film-ei {
-            font-size: var(--text-lg);
-            font-weight: 700;
+            font-size: var(--text-md);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--accent);
         }
 
@@ -900,8 +1154,8 @@
             font-weight: 500;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: #68686c;
-            transition: color 0.15s ease;
+            color: #a0a0a4;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
         }
 
         .location-bar.active .location-text {
@@ -912,7 +1166,7 @@
         .location-icon {
             width: 16px;
             height: 16px;
-            color: #78787c;
+            color: #a0a0a4;
             flex-shrink: 0;
         }
 
@@ -937,34 +1191,168 @@
             background: #1a1a1c;
         }
 
+        /* ============================================
+           FILM TOGGLE SWITCH — Circular real-life toggle
+           ============================================ */
+        .film-toggles-row {
+            display: flex;
+            gap: var(--space-6);
+            margin-bottom: var(--space-4);
+            justify-content: center;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .toggle-label {
+            font-size: var(--text-xs);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            transition: color 0.15s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label.active {
+            color: var(--text-primary);
+        }
+
+        .toggle-track {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: #f0f0f4;
+            border-radius: 14px;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.08),
+                inset 0 1px 2px rgba(0, 0, 0, 0.06),
+                0 1px 0 rgba(255, 255, 255, 0.9);
+            transition: background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .toggle-track:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.12),
+                0 1px 2px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 1);
+            transition:
+                left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                width 0.1s ease;
+            pointer-events: none;
+        }
+
+        .toggle-track[data-state="right"] .toggle-knob {
+            left: 27px;
+        }
+
+        .toggle-track:active .toggle-knob {
+            width: 26px;
+        }
+
+        .toggle-track[data-state="right"]:active .toggle-knob {
+            left: 23px;
+        }
+
+        /* Orange glow on active label text */
+        .toggle-label.active {
+            color: var(--led-on);
+            text-shadow: 0 0 4px var(--led-on-glow);
+        }
+
+        /* Dark mode */
+        .dark .toggle-label {
+            color: #78787c;
+        }
+
+        .dark .toggle-label.active {
+            color: var(--led-on);
+            text-shadow: 0 0 4px var(--led-on-glow);
+        }
+
+        .dark .toggle-track {
+            background: #3a3a3e;
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.25),
+                inset 0 1px 2px rgba(0, 0, 0, 0.15),
+                0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .dark .toggle-knob {
+            background: #e8e8ec;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.25),
+                0 1px 2px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+
     </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="app" id="main-content">
+        <!-- Persistent header - always visible -->
+        <div class="persistent-header">
+            <h1 class="app-title">Roll Planner</h1>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+
         <!-- Screen 1: Set the conditions -->
         <div class="screen active" id="screen-conditions">
-            <div class="header">
-                <div class="header-row">
-                    <h1>Roll Planner</h1>
-                    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                        </svg>
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                        </svg>
+            <!-- Film toggles row -->
+            <div class="film-toggles-row">
+                <!-- Film type toggle: Colour / B&W -->
+                <div class="toggle-switch" id="film-type-switch">
+                    <span class="toggle-label active" data-value="color">Colour</span>
+                    <button class="toggle-track" data-state="left" aria-label="Toggle between Colour and B&W">
+                        <span class="toggle-knob"></span>
                     </button>
+                    <span class="toggle-label" data-value="bw">B&W</span>
                 </div>
-                <h2>Set the conditions</h2>
+
+                <!-- Format toggle: 35mm / 120 -->
+                <div class="toggle-switch" id="format-switch">
+                    <span class="toggle-label active" data-value="35mm">35mm</span>
+                    <button class="toggle-track" data-state="left" aria-label="Toggle between 35mm and 120">
+                        <span class="toggle-knob"></span>
+                    </button>
+                    <span class="toggle-label" data-value="120">120</span>
+                </div>
             </div>
 
             <!-- Location bar -->
@@ -975,6 +1363,11 @@
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
+            </div>
+
+            <!-- Conditions section -->
+            <div class="conditions-section">
+                <h2 class="section-title">Set the conditions</h2>
             </div>
 
             <div class="selector-group">
@@ -1102,20 +1495,14 @@
                 </div>
             </div>
 
-            <div class="spacer"></div>
-
-            <button class="btn-primary" id="btn-continue" disabled>Continue</button>
+            <button class="btn-primary" id="btn-continue" disabled>Get Recommendation</button>
         </div>
 
         <!-- Screen 2: Your roll -->
         <div class="screen" id="screen-recommendation">
-            <span class="back-link" id="btn-back-conditions" role="button" tabindex="0">← Back</span>
-
-            <div class="header">
-                <div class="header-row">
-                    <h1>Roll Planner</h1>
-                </div>
-                <h2>Your roll</h2>
+            <div class="screen-header-row">
+                <span class="back-link" id="btn-back-conditions" role="button" tabindex="0">← BACK</span>
+                <h2 class="screen-title">YOUR ROLL</h2>
             </div>
 
             <div class="film-card">
@@ -1132,6 +1519,52 @@
                 <div class="film-discipline" id="rec-discipline"></div>
             </div>
 
+            <!-- Exposure Settings Guidance -->
+            <div class="guidance-card">
+                <div class="guidance-header">
+                    <span class="guidance-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                        </svg>
+                    </span>
+                    <span class="guidance-title">EXPOSURE SETTINGS</span>
+                </div>
+                <div class="guidance-content">
+                    <div class="guidance-row">
+                        <span class="guidance-label">APERTURE</span>
+                        <span class="guidance-value" id="rec-aperture">f/8</span>
+                    </div>
+                    <div class="guidance-row">
+                        <span class="guidance-label">SHUTTER</span>
+                        <span class="guidance-value" id="rec-shutter">1/125</span>
+                    </div>
+                    <div class="guidance-row">
+                        <span class="guidance-label">EI</span>
+                        <span class="guidance-value" id="rec-ei-setting">400</span>
+                    </div>
+                </div>
+                <div class="guidance-note" id="rec-exposure-note">Starting point for midday sun. Adjust for conditions.</div>
+            </div>
+
+            <!-- Metering Tips -->
+            <div class="guidance-card">
+                <div class="guidance-header">
+                    <span class="guidance-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+                        </svg>
+                    </span>
+                    <span class="guidance-title">METERING TIPS</span>
+                </div>
+                <div class="guidance-content metering-tips">
+                    <div class="metering-tip" id="rec-metering-primary"></div>
+                    <div class="metering-tip secondary" id="rec-metering-secondary"></div>
+                </div>
+            </div>
+
             <div class="spacer"></div>
 
             <button class="btn-primary" id="btn-lock">Lock this roll</button>
@@ -1139,8 +1572,8 @@
 
         <!-- Screen 3: Roll locked -->
         <div class="screen" id="screen-locked">
-            <div class="locked-header">
-                <span class="locked-meta">Roll <span id="roll-number">001</span></span>
+            <div class="screen-header-row">
+                <span class="locked-meta">ROLL <span id="roll-number">001</span></span>
                 <span class="locked-date" id="locked-date"></span>
             </div>
 
@@ -1163,8 +1596,1288 @@
     </div>
 
     <script>
+        // ============================================
+        // COMPREHENSIVE FILM DATABASE 2025-2026
+        // Based on scientific characteristics & community consensus
+        // ============================================
+        const FILM_DATABASE = {
+            // ==========================================
+            // KODAK COLOR NEGATIVE FILMS
+            // ==========================================
+            'portra_160': {
+                name: 'Kodak Portra 160',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 160,
+                formats: ['35mm', '120'],
+                // Technical characteristics (0-10 scale)
+                grain: 2,           // Very fine grain (Print Grain Index ~25)
+                saturation: 5,      // Moderate, natural
+                contrast: 4,        // Lower contrast, soft
+                latitude: 8,        // Excellent latitude, ~5 stops
+                sharpness: 8,       // Very sharp
+                // Color science
+                colorBias: 'neutral_warm',  // Slightly warm, excellent skin tones
+                skinTones: 10,      // Industry standard for portraits
+                // Best conditions
+                idealLight: ['golden', 'flat', 'mixed'],
+                idealEnvironment: ['portrait', 'landscape', 'architecture'],
+                // Push/pull capability
+                pushStops: 1,       // Can push to 320
+                pullStops: 1,       // Can pull to 80
+                // Reciprocity failure starts
+                reciprocityStart: 1, // seconds
+                // Community rating
+                communityScore: 9.2,
+                pricePoint: 'professional'
+            },
+            'portra_400': {
+                name: 'Kodak Portra 400',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 3,           // Fine grain for 400 speed
+                saturation: 5,      // Moderate, natural
+                contrast: 5,        // Balanced
+                latitude: 10,       // World's best latitude, 6+ stops overexposure tolerance
+                sharpness: 8,
+                colorBias: 'neutral_warm',
+                skinTones: 10,
+                idealLight: ['golden', 'flat', 'harsh', 'mixed'],
+                idealEnvironment: ['portrait', 'street', 'landscape', 'interiors'],
+                pushStops: 2,       // Pushes well to 800, 1600
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 9.5,
+                pricePoint: 'professional'
+            },
+            'portra_800': {
+                name: 'Kodak Portra 800',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 800,
+                formats: ['35mm', '120'],
+                grain: 5,           // Moderate grain
+                saturation: 5,
+                contrast: 5,
+                latitude: 8,
+                sharpness: 7,
+                colorBias: 'neutral_warm',
+                skinTones: 9,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['interiors', 'street', 'portrait'],
+                pushStops: 1,       // Can push to 1600
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.8,
+                pricePoint: 'professional'
+            },
+            'ektar_100': {
+                name: 'Kodak Ektar 100',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,           // World's finest grain color negative (<25 PGI)
+                saturation: 9,      // High saturation, vivid
+                contrast: 7,        // Higher contrast
+                latitude: 5,        // Narrower latitude than Portra
+                sharpness: 10,      // Extremely sharp
+                colorBias: 'saturated_warm',
+                skinTones: 5,       // Can render skin too red
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 0,
+                pullStops: 1,       // Often shot at 64-80
+                reciprocityStart: 1,
+                communityScore: 8.5,
+                pricePoint: 'professional'
+            },
+            'gold_200': {
+                name: 'Kodak Gold 200',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 200,
+                formats: ['35mm', '120'],
+                grain: 5,           // Moderate grain (PGI 44)
+                saturation: 6,      // Punchy, warm
+                contrast: 6,
+                latitude: 7,
+                sharpness: 6,
+                colorBias: 'warm_yellow',  // Distinctive warm/yellow cast
+                skinTones: 7,
+                idealLight: ['golden', 'mixed'],
+                idealEnvironment: ['street', 'portrait', 'landscape'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 8.2,
+                pricePoint: 'consumer'
+            },
+            'ultramax_400': {
+                name: 'Kodak Ultramax 400',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 400,
+                formats: ['35mm'],
+                grain: 6,           // Visible grain (PGI 46)
+                saturation: 7,      // Punchy, saturated
+                contrast: 6,
+                latitude: 7,
+                sharpness: 6,
+                colorBias: 'warm',
+                skinTones: 7,
+                idealLight: ['flat', 'mixed', 'harsh'],
+                idealEnvironment: ['street', 'landscape'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 8.0,
+                pricePoint: 'consumer'
+            },
+            'colorplus_200': {
+                name: 'Kodak ColorPlus 200',
+                brand: 'Kodak',
+                type: 'color_negative',
+                iso: 200,
+                formats: ['35mm'],
+                grain: 6,
+                saturation: 5,      // Flatter than Gold
+                contrast: 5,
+                latitude: 7,
+                sharpness: 6,
+                colorBias: 'neutral_warm',
+                skinTones: 7,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 7.5,
+                pricePoint: 'budget'
+            },
+
+            // ==========================================
+            // KODAK BLACK & WHITE FILMS
+            // ==========================================
+            'trix_400': {
+                name: 'Kodak Tri-X 400',
+                brand: 'Kodak',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 6,           // Classic, characterful grain
+                saturation: 0,      // B&W
+                contrast: 7,        // Punchy contrast, deep blacks
+                latitude: 8,        // Wide latitude, 3+ stops
+                sharpness: 7,
+                colorBias: 'bw',
+                skinTones: 8,       // Good tonal separation
+                idealLight: ['harsh', 'flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait', 'architecture'],
+                pushStops: 3,       // Legendary push capability to 3200
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 9.4,
+                pricePoint: 'professional'
+            },
+            'tmax_100': {
+                name: 'Kodak T-Max 100',
+                brand: 'Kodak',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,           // T-grain technology, ultra fine
+                saturation: 0,
+                contrast: 5,        // Moderate, smooth
+                latitude: 7,
+                sharpness: 10,      // Extremely sharp
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture', 'portrait'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 10, // Excellent reciprocity
+                communityScore: 8.7,
+                pricePoint: 'professional'
+            },
+            'tmax_400': {
+                name: 'Kodak T-Max 400',
+                brand: 'Kodak',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 3,           // T-grain, fine for 400
+                saturation: 0,
+                contrast: 5,
+                latitude: 8,
+                sharpness: 9,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['flat', 'harsh', 'mixed'],
+                idealEnvironment: ['street', 'portrait', 'architecture'],
+                pushStops: 2,       // Pushes to 1600 well
+                pullStops: 1,
+                reciprocityStart: 10,
+                communityScore: 8.5,
+                pricePoint: 'professional'
+            },
+            'tmax_p3200': {
+                name: 'Kodak T-Max P3200',
+                brand: 'Kodak',
+                type: 'bw_negative',
+                iso: 1000,          // Actual ISO, box speed 3200
+                formats: ['35mm'],
+                grain: 8,           // Visible, characterful
+                saturation: 0,
+                contrast: 7,
+                latitude: 6,
+                sharpness: 6,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['flat'],
+                idealEnvironment: ['interiors', 'street'],
+                pushStops: 2,       // Can push to 6400+
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 8.3,
+                pricePoint: 'professional'
+            },
+
+            // ==========================================
+            // ILFORD BLACK & WHITE FILMS
+            // ==========================================
+            'hp5_plus': {
+                name: 'Ilford HP5 Plus',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 5,           // Medium, classic
+                saturation: 0,
+                contrast: 6,        // Strong but not harsh
+                latitude: 9,        // Excellent, -2 to +4 stops
+                sharpness: 7,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['flat', 'harsh', 'mixed'],
+                idealEnvironment: ['street', 'portrait', 'architecture'],
+                pushStops: 3,       // Pushes to 3200
+                pullStops: 2,
+                reciprocityStart: 1,
+                communityScore: 9.3,
+                pricePoint: 'professional'
+            },
+            'fp4_plus': {
+                name: 'Ilford FP4 Plus',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 125,
+                formats: ['35mm', '120'],
+                grain: 2,           // Very fine
+                saturation: 0,
+                contrast: 5,
+                latitude: 8,        // Excellent for 125 ISO
+                sharpness: 9,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['golden', 'harsh', 'flat'],
+                idealEnvironment: ['landscape', 'architecture', 'portrait'],
+                pushStops: 2,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.8,
+                pricePoint: 'professional'
+            },
+            'delta_100': {
+                name: 'Ilford Delta 100',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,           // Core-shell crystal, ultra fine
+                saturation: 0,
+                contrast: 5,
+                latitude: 6,        // Narrower than Plus films
+                sharpness: 10,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.5,
+                pricePoint: 'professional'
+            },
+            'delta_400': {
+                name: 'Ilford Delta 400',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 3,           // T-grain equivalent, fine
+                saturation: 0,
+                contrast: 5,
+                latitude: 6,        // Narrower than HP5
+                sharpness: 9,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['flat', 'harsh'],
+                idealEnvironment: ['portrait', 'architecture', 'street'],
+                pushStops: 2,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.4,
+                pricePoint: 'professional'
+            },
+            'delta_3200': {
+                name: 'Ilford Delta 3200',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 1000,          // Actual ISO, EI 3200
+                formats: ['35mm', '120'],
+                grain: 8,
+                saturation: 0,
+                contrast: 7,
+                latitude: 7,        // Wide for high speed
+                sharpness: 6,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['flat'],
+                idealEnvironment: ['interiors', 'street'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.5,
+                pricePoint: 'professional'
+            },
+            'panf_plus': {
+                name: 'Ilford Pan F Plus',
+                brand: 'Ilford',
+                type: 'bw_negative',
+                iso: 50,
+                formats: ['35mm', '120'],
+                grain: 0,           // Virtually grainless
+                saturation: 0,
+                contrast: 5,
+                latitude: 6,
+                sharpness: 10,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 8.6,
+                pricePoint: 'professional'
+            },
+            'xp2_super': {
+                name: 'Ilford XP2 Super',
+                brand: 'Ilford',
+                type: 'bw_c41',      // Chromogenic B&W
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 3,           // Very fine for 400
+                saturation: 0,
+                contrast: 5,
+                latitude: 9,        // Exceptional, ISO 50-800
+                sharpness: 8,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['flat', 'mixed', 'harsh'],
+                idealEnvironment: ['street', 'portrait', 'travel'],
+                pushStops: 1,
+                pullStops: 3,       // Can shoot 50-800 on same roll
+                reciprocityStart: 1,
+                communityScore: 8.4,
+                pricePoint: 'professional'
+            },
+
+            // ==========================================
+            // CINESTILL FILMS
+            // ==========================================
+            'cinestill_800t': {
+                name: 'CineStill 800T',
+                brand: 'CineStill',
+                type: 'color_negative',
+                iso: 800,
+                formats: ['35mm', '120'],
+                grain: 4,           // Fine for 800
+                saturation: 6,
+                contrast: 6,
+                latitude: 7,
+                sharpness: 7,
+                colorBias: 'tungsten',  // Balanced for tungsten/artificial light
+                skinTones: 7,
+                halation: true,     // Signature red glow around highlights
+                idealLight: ['mixed'],  // Artificial/tungsten
+                idealEnvironment: ['street', 'interiors'],
+                pushStops: 2,       // Pushes to 3200
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.7,
+                pricePoint: 'specialty'
+            },
+            'cinestill_400d': {
+                name: 'CineStill 400D',
+                brand: 'CineStill',
+                type: 'color_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 4,
+                saturation: 6,
+                contrast: 5,
+                latitude: 8,        // Wide dynamic range
+                sharpness: 8,
+                colorBias: 'daylight',
+                skinTones: 8,
+                halation: true,     // Moderate halation
+                idealLight: ['golden', 'flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait', 'landscape'],
+                pushStops: 3,       // Can push to 3200
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 8.5,
+                pricePoint: 'specialty'
+            },
+            'cinestill_50d': {
+                name: 'CineStill 50D',
+                brand: 'CineStill',
+                type: 'color_negative',
+                iso: 50,
+                formats: ['35mm'],
+                grain: 1,           // Ultra fine
+                saturation: 7,
+                contrast: 6,
+                latitude: 6,
+                sharpness: 10,
+                colorBias: 'daylight',
+                skinTones: 8,
+                halation: false,    // Minimal halation
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'portrait', 'architecture'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 8.6,
+                pricePoint: 'specialty'
+            },
+
+            // ==========================================
+            // FUJIFILM
+            // ==========================================
+            'velvia_50': {
+                name: 'Fujifilm Velvia 50',
+                brand: 'Fujifilm',
+                type: 'slide',
+                iso: 50,
+                formats: ['35mm', '120'],
+                grain: 1,           // Ultra fine
+                saturation: 10,     // Maximum saturation
+                contrast: 9,        // High contrast
+                latitude: 3,        // Very narrow (slide film)
+                sharpness: 10,
+                colorBias: 'saturated_cool',
+                skinTones: 3,       // Poor for skin, oversaturates
+                idealLight: ['golden'],
+                idealEnvironment: ['landscape'],
+                pushStops: 0,
+                pullStops: 0,
+                reciprocityStart: 4,
+                communityScore: 9.0,
+                pricePoint: 'professional'
+            },
+            'velvia_100': {
+                name: 'Fujifilm Velvia 100',
+                brand: 'Fujifilm',
+                type: 'slide',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,
+                saturation: 9,
+                contrast: 8,
+                latitude: 4,
+                sharpness: 9,
+                colorBias: 'saturated_cool',
+                skinTones: 4,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 0,
+                pullStops: 0,
+                reciprocityStart: 4,
+                communityScore: 8.7,
+                pricePoint: 'professional'
+            },
+            'provia_100f': {
+                name: 'Fujifilm Provia 100F',
+                brand: 'Fujifilm',
+                type: 'slide',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,           // RMS 8, ultra fine
+                saturation: 6,      // Moderate for slide
+                contrast: 6,
+                latitude: 5,        // Better than Velvia
+                sharpness: 9,
+                colorBias: 'neutral',
+                skinTones: 7,       // Best slide film for portraits
+                idealLight: ['golden', 'flat', 'harsh'],
+                idealEnvironment: ['portrait', 'landscape', 'architecture'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 4,
+                communityScore: 8.8,
+                pricePoint: 'professional'
+            },
+            'acros_100ii': {
+                name: 'Fujifilm Neopan Acros II',
+                brand: 'Fujifilm',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 1,           // Super fine
+                saturation: 0,
+                contrast: 5,
+                latitude: 7,
+                sharpness: 10,
+                colorBias: 'bw',
+                skinTones: 8,
+                idealLight: ['golden', 'harsh', 'flat'],
+                idealEnvironment: ['landscape', 'architecture', 'portrait'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 120, // Exceptional reciprocity
+                communityScore: 8.9,
+                pricePoint: 'professional'
+            },
+
+            // ==========================================
+            // LOMOGRAPHY
+            // ==========================================
+            'lomo_cn_400': {
+                name: 'Lomography Color Negative 400',
+                brand: 'Lomography',
+                type: 'color_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 6,
+                saturation: 7,      // Punchy
+                contrast: 6,
+                latitude: 6,
+                sharpness: 6,
+                colorBias: 'warm',
+                skinTones: 6,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 7.5,
+                pricePoint: 'consumer'
+            },
+            'lomo_cn_800': {
+                name: 'Lomography Color Negative 800',
+                brand: 'Lomography',
+                type: 'color_negative',
+                iso: 800,
+                formats: ['35mm', '120'],
+                grain: 7,
+                saturation: 7,
+                contrast: 7,
+                latitude: 6,
+                sharpness: 5,
+                colorBias: 'warm',
+                skinTones: 6,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['interiors', 'street'],
+                pushStops: 1,
+                pullStops: 0,
+                reciprocityStart: 1,
+                communityScore: 7.8,
+                pricePoint: 'consumer'
+            },
+            'lomo_berlin_400': {
+                name: 'Lomography Berlin Kino 400',
+                brand: 'Lomography',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 6,           // Classic cinema grain
+                saturation: 0,
+                contrast: 5,        // Softer contrast
+                latitude: 8,        // Wide
+                sharpness: 6,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait'],
+                pushStops: 3,       // Pushes to 3200
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.8,
+                pricePoint: 'consumer'
+            },
+
+            // ==========================================
+            // FOMA / ARISTA
+            // ==========================================
+            'fomapan_100': {
+                name: 'Fomapan 100',
+                brand: 'Foma',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 3,
+                saturation: 0,
+                contrast: 6,
+                latitude: 6,
+                sharpness: 7,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.5,
+                pricePoint: 'budget'
+            },
+            'fomapan_400': {
+                name: 'Fomapan 400',
+                brand: 'Foma',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 6,
+                saturation: 0,
+                contrast: 6,
+                latitude: 6,
+                sharpness: 6,
+                colorBias: 'bw',
+                skinTones: 6,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street'],
+                pushStops: 2,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.2,
+                pricePoint: 'budget'
+            },
+
+            // ==========================================
+            // KENTMERE (Ilford budget line)
+            // ==========================================
+            'kentmere_100': {
+                name: 'Kentmere 100',
+                brand: 'Kentmere',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm'],
+                grain: 3,
+                saturation: 0,
+                contrast: 5,
+                latitude: 6,
+                sharpness: 7,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'architecture'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.3,
+                pricePoint: 'budget'
+            },
+            'kentmere_400': {
+                name: 'Kentmere 400',
+                brand: 'Kentmere',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm'],
+                grain: 6,
+                saturation: 0,
+                contrast: 5,
+                latitude: 6,
+                sharpness: 6,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait'],
+                pushStops: 2,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.4,
+                pricePoint: 'budget'
+            },
+
+            // ==========================================
+            // ROLLEI
+            // ==========================================
+            'rollei_rpx_100': {
+                name: 'Rollei RPX 100',
+                brand: 'Rollei',
+                type: 'bw_negative',
+                iso: 100,
+                formats: ['35mm', '120'],
+                grain: 2,
+                saturation: 0,
+                contrast: 5,
+                latitude: 7,
+                sharpness: 8,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['golden', 'harsh'],
+                idealEnvironment: ['landscape', 'portrait'],
+                pushStops: 1,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.8,
+                pricePoint: 'consumer'
+            },
+            'rollei_rpx_400': {
+                name: 'Rollei RPX 400',
+                brand: 'Rollei',
+                type: 'bw_negative',
+                iso: 400,
+                formats: ['35mm', '120'],
+                grain: 5,
+                saturation: 0,
+                contrast: 5,
+                latitude: 7,
+                sharpness: 7,
+                colorBias: 'bw',
+                skinTones: 7,
+                idealLight: ['flat', 'mixed'],
+                idealEnvironment: ['street', 'portrait'],
+                pushStops: 2,
+                pullStops: 1,
+                reciprocityStart: 1,
+                communityScore: 7.7,
+                pricePoint: 'consumer'
+            }
+        };
+
+        // ============================================
+        // SCIENCE-BASED RECOMMENDATION ALGORITHM
+        // ============================================
+
+        // Scoring weights for different factors
+        const SCORING_WEIGHTS = {
+            lightMatch: 25,         // How well film handles the light condition
+            environmentMatch: 20,   // Suitability for environment
+            intentMatch: 20,        // Aesthetic alignment with intent
+            latitude: 15,           // Exposure latitude (forgivingness)
+            weatherBonus: 10,       // Weather condition optimization
+            communityScore: 10      // Community preference
+        };
+
+        // Light condition requirements
+        const LIGHT_REQUIREMENTS = {
+            flat: {
+                // Overcast, diffused light - needs films that handle low contrast well
+                minLatitude: 6,
+                preferredContrast: [5, 6, 7],  // Higher contrast helps
+                isoRange: [200, 3200],         // Needs faster film
+                grainTolerance: 8              // Grain less visible in flat light
+            },
+            harsh: {
+                // Direct sunlight, high contrast scenes
+                minLatitude: 7,
+                preferredContrast: [4, 5, 6],  // Lower contrast film balances scene
+                isoRange: [50, 400],           // Can use slower films
+                grainTolerance: 4              // Fine grain preferred
+            },
+            golden: {
+                // Golden hour, warm directional light
+                minLatitude: 5,
+                preferredContrast: [4, 5, 6],
+                isoRange: [50, 400],
+                grainTolerance: 4
+            },
+            mixed: {
+                // Variable, changing conditions
+                minLatitude: 8,                // Need maximum flexibility
+                preferredContrast: [5, 6],
+                isoRange: [200, 800],
+                grainTolerance: 6
+            }
+        };
+
+        // Environment requirements
+        const ENVIRONMENT_REQUIREMENTS = {
+            street: {
+                minISO: 200,           // Need speed for candid moments
+                preferredTypes: ['color_negative', 'bw_negative'],
+                sharpnessImportance: 6,
+                latitudeImportance: 9  // Changing conditions
+            },
+            architecture: {
+                minISO: 50,            // Tripod work possible
+                preferredTypes: ['bw_negative', 'color_negative', 'slide'],
+                sharpnessImportance: 10,
+                latitudeImportance: 6
+            },
+            interiors: {
+                minISO: 400,           // Low light
+                preferredTypes: ['color_negative', 'bw_negative'],
+                sharpnessImportance: 6,
+                latitudeImportance: 8
+            },
+            landscape: {
+                minISO: 50,
+                preferredTypes: ['slide', 'color_negative', 'bw_negative'],
+                sharpnessImportance: 9,
+                latitudeImportance: 5
+            }
+        };
+
+        // Intent requirements (aesthetic goals)
+        const INTENT_REQUIREMENTS = {
+            calm: {
+                // Minimal, serene
+                preferredGrain: [0, 1, 2, 3],
+                preferredContrast: [4, 5],
+                preferredSaturation: [4, 5, 6],
+                colorBiasPreference: ['neutral', 'neutral_warm']
+            },
+            graphic: {
+                // Bold, geometric
+                preferredGrain: [0, 1, 2, 3, 4],
+                preferredContrast: [6, 7, 8],
+                preferredSaturation: [6, 7, 8, 9],
+                colorBiasPreference: ['saturated', 'bw']
+            },
+            emotional: {
+                // Expressive, warm
+                preferredGrain: [3, 4, 5, 6],
+                preferredContrast: [5, 6],
+                preferredSaturation: [5, 6, 7],
+                colorBiasPreference: ['warm', 'warm_yellow', 'neutral_warm']
+            },
+            documentary: {
+                // Honest, classic
+                preferredGrain: [4, 5, 6, 7],
+                preferredContrast: [5, 6, 7],
+                preferredSaturation: [4, 5, 6],
+                colorBiasPreference: ['neutral', 'bw', 'warm']
+            }
+        };
+
+        // Weather condition adjustments
+        const WEATHER_ADJUSTMENTS = {
+            'CLEAR': { isoBonus: [-100, 0], contrastBonus: 0 },
+            'FEW CLOUDS': { isoBonus: [0, 100], contrastBonus: 0 },
+            'CLOUDY': { isoBonus: [100, 200], contrastBonus: 1 },
+            'OVERCAST': { isoBonus: [200, 400], contrastBonus: 2 },
+            'HEAVY CLOUD': { isoBonus: [400, 800], contrastBonus: 2 },
+            'FOG': { isoBonus: [200, 400], contrastBonus: 2 },
+            'RAIN': { isoBonus: [200, 400], contrastBonus: 1 },
+            'DRIZZLE': { isoBonus: [100, 200], contrastBonus: 1 },
+            'SNOW': { isoBonus: [0, 200], contrastBonus: -1 },
+            'STORM': { isoBonus: [400, 800], contrastBonus: 2 },
+            'SHOWERS': { isoBonus: [200, 400], contrastBonus: 1 },
+            'UNKNOWN': { isoBonus: [0, 200], contrastBonus: 0 }
+        };
+
+        function scoreFilm(filmKey, light, environment, intent, weather) {
+            const film = FILM_DATABASE[filmKey];
+            if (!film) return { score: 0, film: null };
+
+            let score = 0;
+            const reasons = [];
+
+            const lightReq = LIGHT_REQUIREMENTS[light];
+            const envReq = ENVIRONMENT_REQUIREMENTS[environment];
+            const intentReq = INTENT_REQUIREMENTS[intent];
+            const weatherAdj = weather ? WEATHER_ADJUSTMENTS[weather] || WEATHER_ADJUSTMENTS['UNKNOWN'] : null;
+
+            // 1. LIGHT MATCH (25 points)
+            let lightScore = 0;
+
+            // Latitude requirement
+            if (film.latitude >= lightReq.minLatitude) {
+                lightScore += 10;
+            } else {
+                lightScore += Math.max(0, 10 - (lightReq.minLatitude - film.latitude) * 2);
+            }
+
+            // Contrast preference
+            if (lightReq.preferredContrast.includes(film.contrast)) {
+                lightScore += 8;
+            } else {
+                const contrastDiff = Math.min(...lightReq.preferredContrast.map(c => Math.abs(c - film.contrast)));
+                lightScore += Math.max(0, 8 - contrastDiff * 2);
+            }
+
+            // ISO range suitability (considering push/pull)
+            const effectiveMinISO = film.iso / Math.pow(2, film.pullStops);
+            const effectiveMaxISO = film.iso * Math.pow(2, film.pushStops);
+            if (effectiveMinISO <= lightReq.isoRange[1] && effectiveMaxISO >= lightReq.isoRange[0]) {
+                lightScore += 7;
+            } else {
+                lightScore += 3;
+            }
+
+            score += (lightScore / 25) * SCORING_WEIGHTS.lightMatch;
+            if (lightScore > 20) reasons.push(`Excellent for ${light} light`);
+
+            // 2. ENVIRONMENT MATCH (20 points)
+            let envScore = 0;
+
+            // Type preference
+            if (envReq.preferredTypes.includes(film.type)) {
+                envScore += 8;
+            } else if (film.type === 'bw_c41') {
+                envScore += 6; // C41 B&W is versatile
+            } else {
+                envScore += 2;
+            }
+
+            // ISO suitability
+            if (film.iso >= envReq.minISO || effectiveMaxISO >= envReq.minISO) {
+                envScore += 6;
+            } else {
+                envScore += 2;
+            }
+
+            // Sharpness importance
+            const sharpnessMatch = film.sharpness >= (envReq.sharpnessImportance - 2);
+            if (sharpnessMatch) envScore += 3;
+
+            // Latitude importance
+            const latitudeMatch = film.latitude >= (envReq.latitudeImportance - 2);
+            if (latitudeMatch) envScore += 3;
+
+            score += (envScore / 20) * SCORING_WEIGHTS.environmentMatch;
+            if (envScore > 16) reasons.push(`Ideal for ${environment}`);
+
+            // 3. INTENT MATCH (20 points)
+            let intentScore = 0;
+
+            // Grain preference
+            if (intentReq.preferredGrain.includes(film.grain)) {
+                intentScore += 6;
+            } else {
+                const grainDiff = Math.min(...intentReq.preferredGrain.map(g => Math.abs(g - film.grain)));
+                intentScore += Math.max(0, 6 - grainDiff);
+            }
+
+            // Contrast preference
+            if (intentReq.preferredContrast.includes(film.contrast)) {
+                intentScore += 5;
+            }
+
+            // Saturation preference (for color films)
+            if (film.type !== 'bw_negative' && film.type !== 'bw_c41') {
+                if (intentReq.preferredSaturation.includes(film.saturation)) {
+                    intentScore += 5;
+                }
+            } else {
+                intentScore += 3; // B&W gets partial credit
+            }
+
+            // Color bias preference
+            const biasMatches = intentReq.colorBiasPreference.some(bias =>
+                film.colorBias.includes(bias) || bias === film.colorBias
+            );
+            if (biasMatches) intentScore += 4;
+
+            score += (intentScore / 20) * SCORING_WEIGHTS.intentMatch;
+            if (intentScore > 15) reasons.push(`Perfect for ${intent} aesthetic`);
+
+            // 4. LATITUDE BONUS (15 points)
+            const latitudeScore = (film.latitude / 10) * SCORING_WEIGHTS.latitude;
+            score += latitudeScore;
+            if (film.latitude >= 8) reasons.push('Forgiving exposure latitude');
+
+            // 5. WEATHER OPTIMIZATION (10 points)
+            if (weatherAdj) {
+                let weatherScore = 5; // Base score
+                const [minBonus, maxBonus] = weatherAdj.isoBonus;
+
+                // Check if film ISO (with push capability) fits weather needs
+                const neededISO = film.iso + ((minBonus + maxBonus) / 2);
+                if (effectiveMaxISO >= neededISO && effectiveMinISO <= neededISO * 2) {
+                    weatherScore += 3;
+                }
+
+                // Contrast adjustment fit
+                const adjustedContrast = film.contrast + weatherAdj.contrastBonus;
+                if (adjustedContrast >= 5 && adjustedContrast <= 7) {
+                    weatherScore += 2;
+                }
+
+                score += (weatherScore / 10) * SCORING_WEIGHTS.weatherBonus;
+            }
+
+            // 6. COMMUNITY SCORE (10 points)
+            score += (film.communityScore / 10) * SCORING_WEIGHTS.communityScore;
+
+            // ============================================
+            // SPECIAL BONUSES — Encourage variety & character
+            // ============================================
+
+            // CineStill 800T — cinematic night scenes
+            if (filmKey === 'cinestill_800t' && light === 'mixed') {
+                score += 6;
+                reasons.push('Cinematic halation for night scenes');
+            }
+
+            // CineStill 400D — versatile cinema stock
+            if (filmKey === 'cinestill_400d' && (intent === 'emotional' || intent === 'documentary')) {
+                score += 4;
+                reasons.push('Cinema stock with character');
+            }
+
+            // Ektar — landscape and architecture king
+            if (filmKey === 'ektar_100' && (environment === 'landscape' || environment === 'architecture') && light === 'golden') {
+                score += 5;
+                reasons.push('Stunning saturation for landscapes');
+            }
+
+            // Gold 200 — nostalgic warmth
+            if (filmKey === 'gold_200' && intent === 'emotional') {
+                score += 5;
+                reasons.push('Nostalgic warmth and character');
+            }
+
+            // Ultramax — punchy street vibes
+            if (filmKey === 'ultramax_400' && environment === 'street') {
+                score += 4;
+                reasons.push('Punchy colors for street');
+            }
+
+            // Portra 160 — refined portraits and golden hour
+            if (filmKey === 'portra_160' && (light === 'golden' || intent === 'calm')) {
+                score += 4;
+                reasons.push('Refined tones for golden light');
+            }
+
+            // Portra 800 — low light specialist
+            if (filmKey === 'portra_800' && (environment === 'interiors' || light === 'flat')) {
+                score += 4;
+                reasons.push('Low light specialist');
+            }
+
+            // Velvia — landscape drama (slide)
+            if (filmKey === 'velvia_50' && environment === 'landscape' && light === 'golden') {
+                score += 5;
+                reasons.push('Legendary landscape saturation');
+            }
+
+            // Provia — versatile slide
+            if (filmKey === 'provia_100f' && intent === 'graphic') {
+                score += 4;
+                reasons.push('Clean slide film precision');
+            }
+
+            // B&W BONUSES
+
+            // Tri-X — street legend
+            if (filmKey === 'trix_400' && (environment === 'street' || intent === 'documentary')) {
+                score += 5;
+                reasons.push('The street photography legend');
+            }
+
+            // HP5 — versatile workhorse
+            if (filmKey === 'hp5_plus' && light === 'mixed') {
+                score += 4;
+                reasons.push('Handles anything you throw at it');
+            }
+
+            // FP4 — fine art choice
+            if (filmKey === 'fp4_plus' && (intent === 'calm' || environment === 'architecture')) {
+                score += 4;
+                reasons.push('Fine grain, beautiful tones');
+            }
+
+            // T-Max 100 — technical perfection
+            if (filmKey === 'tmax_100' && environment === 'architecture') {
+                score += 4;
+                reasons.push('Maximum sharpness and detail');
+            }
+
+            // Delta 3200 — available darkness
+            if (filmKey === 'delta_3200' && environment === 'interiors') {
+                score += 5;
+                reasons.push('See in the dark');
+            }
+
+            // Pan F — ultimate fine grain
+            if (filmKey === 'panf_plus' && intent === 'calm' && light === 'golden') {
+                score += 4;
+                reasons.push('Virtually grainless perfection');
+            }
+
+            // Acros II — long exposure master
+            if (filmKey === 'acros_100ii' && environment === 'landscape') {
+                score += 4;
+                reasons.push('Exceptional reciprocity for long exposures');
+            }
+
+            // PENALTIES — Reduce over-recommendation of safe choices
+
+            // Portra 400 — still excellent, but not always the answer
+            if (filmKey === 'portra_400') {
+                // Only bonus when it's truly the best match
+                if (light === 'mixed' && environment === 'street' && intent === 'documentary') {
+                    score += 2;
+                    reasons.push('The versatile choice');
+                } else {
+                    // Slight penalty to let other films shine
+                    score -= 2;
+                }
+            }
+
+            // HP5 penalty when other B&W films are more appropriate
+            if (filmKey === 'hp5_plus' && intent === 'calm') {
+                score -= 2; // Finer grain films better for minimal aesthetic
+            }
+
+            // Slide film bonus for graphic intent (reward the bold)
+            if (film.type === 'slide' && intent === 'graphic') {
+                score += 3;
+                reasons.push('Bold slide film contrast');
+            }
+
+            return {
+                score: Math.round(score * 10) / 10,
+                film: film,
+                filmKey: filmKey,
+                reasons: reasons
+            };
+        }
+
+        function getRecommendation(light, environment, intent, weather = null, filmType = 'color', filmFormat = '35mm') {
+            const scores = [];
+
+            // Define which film types to include based on user selection
+            const allowedTypes = filmType === 'bw'
+                ? ['bw_negative', 'bw_c41']
+                : ['color_negative', 'slide'];
+
+            // Score all films
+            for (const filmKey of Object.keys(FILM_DATABASE)) {
+                const film = FILM_DATABASE[filmKey];
+
+                // Filter by film type
+                if (!allowedTypes.includes(film.type)) {
+                    continue;
+                }
+
+                // Filter by format availability
+                if (!film.formats.includes(filmFormat)) {
+                    continue;
+                }
+
+                const result = scoreFilm(filmKey, light, environment, intent, weather);
+                if (result.score > 0) {
+                    scores.push(result);
+                }
+            }
+
+            // Sort by score descending
+            scores.sort((a, b) => b.score - a.score);
+
+            // Get top recommendation
+            const top = scores[0];
+            if (!top) {
+                // Fallback based on film type
+                if (filmType === 'bw') {
+                    return {
+                        film: 'Ilford HP5 Plus',
+                        ei: 400,
+                        exposure: 'Meter for shadows. A versatile choice.',
+                        alternatives: []
+                    };
+                }
+                return {
+                    film: 'Kodak Portra 400',
+                    ei: 400,
+                    exposure: 'Meter for midtones. A versatile choice.',
+                    alternatives: []
+                };
+            }
+
+            // Calculate recommended EI based on conditions
+            const film = top.film;
+            let ei = film.iso;
+            let exposureAdvice = '';
+
+            // Adjust EI based on light conditions
+            if (light === 'flat' || light === 'mixed') {
+                // Overexpose by ~1 stop for color negative
+                if (film.type === 'color_negative' && film.latitude >= 7) {
+                    ei = Math.round(film.iso * 0.6); // ~2/3 stop over
+                    exposureAdvice = 'Expose for shadows. ';
+                }
+            } else if (light === 'harsh') {
+                // Protect highlights
+                if (film.type === 'color_negative') {
+                    ei = Math.round(film.iso * 0.8);
+                    exposureAdvice = 'Protect highlights. ';
+                } else if (film.type === 'slide') {
+                    exposureAdvice = 'Meter for highlights carefully. ';
+                }
+            } else if (light === 'golden') {
+                exposureAdvice = 'Protect highlights to preserve warm tones. ';
+            }
+
+            // Weather-based adjustments
+            if (weather) {
+                const weatherAdj = WEATHER_ADJUSTMENTS[weather];
+                if (weatherAdj && weatherAdj.isoBonus[0] > 0) {
+                    // Cloudy/overcast - might need to push
+                    if (film.pushStops > 0 && film.iso < 400) {
+                        const pushAmount = Math.min(film.pushStops, Math.ceil(weatherAdj.isoBonus[0] / film.iso));
+                        if (pushAmount > 0) {
+                            ei = film.iso * Math.pow(2, pushAmount);
+                            exposureAdvice += `Push +${pushAmount} in development. `;
+                        }
+                    }
+                }
+            }
+
+            // Environment-specific advice
+            if (environment === 'interiors') {
+                exposureAdvice += 'Interior light falls off quickly—expose for the subject.';
+            } else if (environment === 'landscape') {
+                exposureAdvice += film.type === 'slide'
+                    ? 'Use a tripod and spot meter highlights.'
+                    : 'Meter for midtones to preserve dynamic range.';
+            } else if (environment === 'street') {
+                exposureAdvice += "Trust the latitude. Don't overthink—capture the moment.";
+            } else if (environment === 'architecture') {
+                exposureAdvice += 'Watch for blown highlights on reflective surfaces.';
+            }
+
+            // Get alternatives (next 2 highest scoring)
+            const alternatives = scores.slice(1, 3).map(s => ({
+                name: s.film.name,
+                reason: s.reasons[0] || 'Good alternative'
+            }));
+
+            return {
+                film: film.name,
+                ei: ei,
+                exposure: exposureAdvice.trim(),
+                type: film.type,
+                grain: film.grain,
+                latitude: film.latitude,
+                score: top.score,
+                reasons: top.reasons,
+                alternatives: alternatives
+            };
+        }
+
         // State
         const state = {
+            filmType: 'color',  // 'color' or 'bw'
+            filmFormat: '35mm', // '35mm' or '120'
             light: null,
             environment: null,
             intent: null,
@@ -1194,57 +2907,74 @@
             documentary: "Stay present. Don't chase moments."
         };
 
-        // Recommendation engine
-        function getRecommendation(light, environment, intent) {
-            // Golden light
-            if (light === 'golden') {
+        // Exposure guidance based on lighting and ISO
+        function getExposureGuidance(light, ei, environment) {
+            // Base exposure settings using Sunny 16 rule variations
+            const exposureSettings = {
+                harsh: { aperture: 'f/16', shutter: `1/${ei}`, note: 'Bright sun. Watch for harsh shadows.' },
+                bright: { aperture: 'f/11', shutter: `1/${ei}`, note: 'Open shade or slight overcast.' },
+                mixed: { aperture: 'f/8', shutter: `1/${ei}`, note: 'Variable light. Bracket if unsure.' },
+                flat: { aperture: 'f/5.6', shutter: `1/${ei}`, note: 'Overcast sky. Even, soft light.' },
+                dim: { aperture: 'f/4', shutter: `1/${Math.round(ei/2)}`, note: 'Low light. Consider a tripod.' },
+                dark: { aperture: 'f/2.8', shutter: `1/${Math.round(ei/4)}`, note: 'Very low light. Steady hands or support.' }
+            };
+
+            // Adjust for environment
+            let settings = { ...exposureSettings[light] } || exposureSettings.mixed;
+
+            if (environment === 'interiors') {
+                // Interiors typically need more light
+                settings.note = 'Interior light. Meter for highlights you want to keep.';
+                if (light === 'bright' || light === 'harsh') {
+                    settings.aperture = 'f/5.6';
+                    settings.shutter = `1/${Math.round(ei/2)}`;
+                }
+            } else if (environment === 'portrait') {
+                settings.note = 'Open up for shallow depth. Meter for skin.';
+            } else if (environment === 'landscape') {
+                settings.note = 'Stop down for depth. Meter for midtones.';
+            }
+
+            return settings;
+        }
+
+        // Metering tips based on conditions
+        function getMeteringTips(light, environment, intent) {
+            const tips = {
+                primary: '',
+                secondary: ''
+            };
+
+            // Primary tip based on environment
+            const envTips = {
+                portrait: 'Meter off the subject\'s face or use incident metering.',
+                street: 'Pre-meter for the light you expect. Zone V for pavement.',
+                architecture: 'Meter a grey card or neutral surface in the same light.',
+                interiors: 'Meter the brightest area you want detail in, then open 2 stops.',
+                landscape: 'Meter the sky 1 stop above the ground reading.'
+            };
+            tips.primary = envTips[environment] || 'Meter for midtones in your scene.';
+
+            // Secondary tip based on light + intent
+            if (light === 'harsh' || light === 'bright') {
                 if (intent === 'emotional') {
-                    return { film: 'Portra 160', ei: 100, exposure: 'Protect highlights. Let the warm tones breathe.' };
+                    tips.secondary = 'Let shadows go deep for mood. Expose for highlights.';
+                } else {
+                    tips.secondary = 'Watch contrast. Expose for shadows on negative film.';
                 }
-                if (environment === 'landscape' && intent === 'calm') {
-                    return { film: 'Ektar 100', ei: 100, exposure: 'Protect highlights. Meter for the brightest tones.' };
-                }
-                return { film: 'Portra 400', ei: 320, exposure: 'Protect highlights. A touch of overexposure suits this light.' };
-            }
-
-            // Harsh light
-            if (light === 'harsh') {
-                if (environment === 'street' && intent === 'documentary') {
-                    return { film: 'HP5', ei: 800, exposure: 'Let shadows fall. Embrace the contrast.' };
-                }
-                if (environment === 'architecture' && intent === 'graphic') {
-                    return { film: 'FP4', ei: 64, exposure: 'Protect highlights. Watch for blown whites on surfaces.' };
-                }
-                return { film: 'Portra 400', ei: 200, exposure: 'Protect highlights. Portra handles harsh light gracefully.' };
-            }
-
-            // Flat light
-            if (light === 'flat') {
-                if (environment === 'interiors') {
-                    return { film: 'Portra 400', ei: 800, exposure: 'Expose for shadows. Interior light falls off quickly.' };
-                }
-                if (intent === 'calm') {
-                    return { film: 'Portra 160', ei: 160, exposure: 'Meter for midtones. Flat light is forgiving.' };
-                }
+            } else if (light === 'flat') {
+                tips.secondary = 'Even light is forgiving. Trust your meter reading.';
+            } else if (light === 'dim' || light === 'dark') {
                 if (intent === 'documentary') {
-                    return { film: 'HP5', ei: 400, exposure: 'Expose for shadows. The grain will add texture.' };
+                    tips.secondary = 'Push processing can recover 1-2 stops if needed.';
+                } else {
+                    tips.secondary = 'Bracket exposures. Err on the side of overexposure.';
                 }
-                return { film: 'Portra 400', ei: 400, exposure: 'Meter for midtones. Trust the latitude.' };
+            } else if (light === 'mixed') {
+                tips.secondary = 'Take multiple readings. Expose for your subject.';
             }
 
-            // Mixed light
-            if (light === 'mixed') {
-                if (environment === 'street' && intent === 'documentary') {
-                    return { film: 'Ultramax 400', ei: 400, exposure: 'Protect highlights. The film handles mixed tones well.' };
-                }
-                if (intent === 'emotional') {
-                    return { film: 'Gold 200', ei: 200, exposure: 'Protect highlights. Lean into the warm cast.' };
-                }
-                return { film: 'Portra 400', ei: 400, exposure: 'Meter for highlights. Adapt as conditions shift.' };
-            }
-
-            // Fallback
-            return { film: 'Portra 400', ei: 400, exposure: 'Meter for midtones. A versatile choice.' };
+            return tips;
         }
 
         // DOM elements
@@ -1277,26 +3007,81 @@
 
             group.querySelectorAll('.selector-option').forEach(option => {
                 option.addEventListener('click', () => {
+                    const wasSelected = option.classList.contains('selected');
+
                     // Remove selected from siblings
                     group.querySelectorAll('.selector-option').forEach(o => o.classList.remove('selected'));
-                    // Add selected to clicked
-                    option.classList.add('selected');
-                    // Update state
-                    state[selectorName] = option.dataset.value;
+
+                    if (wasSelected) {
+                        // Toggle off - clear the state
+                        state[selectorName] = null;
+                    } else {
+                        // Toggle on - select this option
+                        option.classList.add('selected');
+                        state[selectorName] = option.dataset.value;
+                    }
                     updateContinueButton();
                 });
             });
         });
 
+        // Toggle switch helper
+        function setupToggleSwitch(switchEl, stateKey, leftValue, rightValue) {
+            const track = switchEl.querySelector('.toggle-track');
+            const labels = switchEl.querySelectorAll('.toggle-label');
+
+            function toggle() {
+                const currentState = track.dataset.state;
+                const newState = currentState === 'left' ? 'right' : 'left';
+                track.dataset.state = newState;
+
+                // Update labels
+                labels.forEach(label => {
+                    const isActive = (newState === 'left' && label.dataset.value === leftValue) ||
+                                     (newState === 'right' && label.dataset.value === rightValue);
+                    label.classList.toggle('active', isActive);
+                });
+
+                // Update state
+                state[stateKey] = newState === 'left' ? leftValue : rightValue;
+            }
+
+            track.addEventListener('click', toggle);
+
+            // Click on labels to toggle
+            labels.forEach(label => {
+                label.addEventListener('click', () => {
+                    const targetState = label.dataset.value === leftValue ? 'left' : 'right';
+                    if (track.dataset.state !== targetState) {
+                        toggle();
+                    }
+                });
+            });
+        }
+
+        // Film type toggle (Colour / B&W)
+        const filmTypeSwitch = document.getElementById('film-type-switch');
+        setupToggleSwitch(filmTypeSwitch, 'filmType', 'color', 'bw');
+
+        // Format toggle (35mm / 120)
+        const formatSwitch = document.getElementById('format-switch');
+        setupToggleSwitch(formatSwitch, 'filmFormat', '35mm', '120');
+
         // Continue button
         btnContinue.addEventListener('click', () => {
             if (btnContinue.disabled) return;
 
-            // Generate recommendation
+            // Get weather conditions if available
+            const weather = state.weather ? state.weather.conditions : null;
+
+            // Generate recommendation using science-based algorithm
             state.recommendation = getRecommendation(
                 state.light,
                 state.environment,
-                state.intent
+                state.intent,
+                weather,
+                state.filmType,
+                state.filmFormat
             );
 
             // Update recommendation screen
@@ -1304,6 +3089,18 @@
             document.getElementById('rec-ei').textContent = `Rate at EI ${state.recommendation.ei}`;
             document.getElementById('rec-exposure').textContent = state.recommendation.exposure;
             document.getElementById('rec-discipline').textContent = disciplines[state.intent];
+
+            // Update exposure guidance
+            const exposureGuidance = getExposureGuidance(state.light, state.recommendation.ei, state.environment);
+            document.getElementById('rec-aperture').textContent = exposureGuidance.aperture;
+            document.getElementById('rec-shutter').textContent = exposureGuidance.shutter;
+            document.getElementById('rec-ei-setting').textContent = state.recommendation.ei;
+            document.getElementById('rec-exposure-note').textContent = exposureGuidance.note;
+
+            // Update metering tips
+            const meteringTips = getMeteringTips(state.light, state.environment, state.intent);
+            document.getElementById('rec-metering-primary').textContent = meteringTips.primary;
+            document.getElementById('rec-metering-secondary').textContent = meteringTips.secondary;
 
             showScreen('recommendation');
         });
@@ -1411,29 +3208,47 @@
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
+        function setTheme(theme, animate = false) {
+            if (animate) {
+                // Simple clean transition - just add class, switch, remove class
+                document.documentElement.classList.add('theme-transitioning');
+
+                // Switch theme immediately
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+
+                // Remove transition class after animation completes
+                setTimeout(() => {
+                    document.documentElement.classList.remove('theme-transitioning');
+                }, 500);
             } else {
-                document.documentElement.classList.remove('dark');
+                // Immediate switch (for initial load)
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
             }
             localStorage.setItem('rollplanner_theme', theme);
         }
 
-        // Initialize theme
-        setTheme(getPreferredTheme());
+        // Initialize theme (no animation on load)
+        setTheme(getPreferredTheme(), false);
 
-        // Toggle handler
+        // Toggle handler (with animation)
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
+            setTheme(newTheme, true);
         });
 
         // Listen for system preference changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!getStoredTheme()) {
-                setTheme(e.matches ? 'dark' : 'light');
+                setTheme(e.matches ? 'dark' : 'light', true);
             }
         });
 
