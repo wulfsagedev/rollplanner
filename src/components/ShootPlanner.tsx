@@ -74,7 +74,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     }
   }, [selectedDate]);
 
-  // Faster debounced location search (reduced from 500ms to 250ms)
+  // Fast debounced location search - 150ms for snappy feel
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (autoSelectTimeoutRef.current) clearTimeout(autoSelectTimeoutRef.current);
@@ -93,6 +93,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
     setIsSearching(true);
 
+    // Very fast debounce - cache makes repeated searches instant
     searchTimeoutRef.current = setTimeout(async () => {
       const results = await searchLocations(searchQuery);
       setSearchResults(results);
@@ -100,14 +101,14 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
       if (results.length > 0) {
         setShowResults(true);
-        // Faster auto-select (reduced from 2s to 1.5s)
+        // Quick auto-select for faster flow
         autoSelectTimeoutRef.current = setTimeout(() => {
           if (results.length > 0) selectLocation(results[0]);
-        }, 1500);
+        }, 1200);
       } else {
         setShowResults(false);
       }
-    }, 250);
+    }, 150);
 
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -137,7 +138,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     fetchSunTimesData();
   }, [selectedLocation, selectedDate, selectedTime]);
 
-  // Optimized forecast fetch with debouncing and abort controller
+  // Fast forecast fetch - minimal debounce since cache handles repeat requests
   useEffect(() => {
     if (!selectedLocation || !selectedTime) {
       setForecast(null);
@@ -151,7 +152,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
     setIsFetching(true);
 
-    // Small debounce to prevent rapid fire when clicking time buttons
+    // Minimal debounce - just enough to batch rapid clicks
     fetchTimeoutRef.current = setTimeout(async () => {
       abortControllerRef.current = new AbortController();
 
@@ -176,7 +177,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
           setIsFetching(false);
         }
       }
-    }, 100);
+    }, 50);
 
     return () => {
       if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);

@@ -1632,6 +1632,11 @@ body::before {
 
 .shoot-planner-field {
   margin-bottom: var(--space-3);
+  position: relative;
+}
+
+.shoot-planner-field:first-of-type {
+  z-index: 10;
 }
 
 .shoot-planner-field:last-of-type {

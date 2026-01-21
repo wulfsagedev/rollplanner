@@ -7,7 +7,61 @@ import { WeatherData } from './types';
 
 // Open-Meteo API (free, no API key required)
 const WEATHER_API = 'https://api.open-meteo.com/v1/forecast';
-const GEOCODING_API = 'https://api.open-meteo.com/v1/forecast';
+
+// ============================================
+// CACHING LAYER - Fast, in-memory cache with TTL
+// ============================================
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache = {
+  locations: new Map<string, CacheEntry<LocationResult[]>>(),
+  reverseGeo: new Map<string, CacheEntry<string>>(),
+  sunTimes: new Map<string, CacheEntry<SunTimes>>(),
+  forecast: new Map<string, CacheEntry<WeatherData>>(),
+};
+
+// Cache TTLs in milliseconds
+const CACHE_TTL = {
+  locations: 24 * 60 * 60 * 1000,  // 24 hours - locations don't change
+  reverseGeo: 24 * 60 * 60 * 1000, // 24 hours - location names don't change
+  sunTimes: 12 * 60 * 60 * 1000,   // 12 hours - sun times are date-specific
+  forecast: 30 * 60 * 1000,        // 30 minutes - forecasts update
+};
+
+function getCached<T>(map: Map<string, CacheEntry<T>>, key: string, ttl: number): T | null {
+  const entry = map.get(key);
+  if (entry && Date.now() - entry.timestamp < ttl) {
+    return entry.data;
+  }
+  return null;
+}
+
+function setCache<T>(map: Map<string, CacheEntry<T>>, key: string, data: T): void {
+  map.set(key, { data, timestamp: Date.now() });
+}
+
+// Forward declare for type resolution
+export interface LocationResult {
+  name: string;
+  displayName: string;
+  lat: number;
+  lon: number;
+}
+
+export interface SunTimes {
+  sunrise: Date;
+  sunset: Date;
+  goldenMorning: Date;
+  goldenEvening: Date;
+  midMorning: Date;
+  midday: Date;
+  midAfternoon: Date;
+  twilight: Date;
+}
 
 interface OpenMeteoResponse {
   current: {
@@ -211,6 +265,13 @@ export async function fetchWeather(
 }
 
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  // Round coordinates to reduce cache misses for nearby locations
+  const cacheKey = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+
+  // Check cache first
+  const cached = getCached(cache.reverseGeo, cacheKey, CACHE_TTL.reverseGeo);
+  if (cached) return cached;
+
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
     const response = await fetch(url, {
@@ -223,31 +284,35 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
     const address = data.address;
 
     // Return the most specific location name available
-    return address.neighbourhood ||
+    const locationName = address.neighbourhood ||
            address.suburb ||
            address.city_district ||
            address.city ||
            address.town ||
            address.village ||
            'Current Location';
+
+    // Cache the result
+    setCache(cache.reverseGeo, cacheKey, locationName);
+    return locationName;
   } catch {
     return 'Current Location';
   }
 }
 
 // ============================================
-// LOCATION SEARCH (Forward geocoding)
+// LOCATION SEARCH (Forward geocoding) - with caching
 // ============================================
-
-export interface LocationResult {
-  name: string;
-  displayName: string;
-  lat: number;
-  lon: number;
-}
 
 export async function searchLocations(query: string): Promise<LocationResult[]> {
   if (!query || query.length < 2) return [];
+
+  // Normalize query for cache key
+  const cacheKey = query.toLowerCase().trim();
+
+  // Check cache first
+  const cached = getCached(cache.locations, cacheKey, CACHE_TTL.locations);
+  if (cached) return cached;
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
@@ -258,12 +323,16 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
     if (!response.ok) return [];
 
     const data = await response.json();
-    return data.map((item: { display_name: string; lat: string; lon: string; name?: string }) => ({
+    const results: LocationResult[] = data.map((item: { display_name: string; lat: string; lon: string; name?: string }) => ({
       name: item.name || item.display_name.split(',')[0],
       displayName: item.display_name,
       lat: parseFloat(item.lat),
       lon: parseFloat(item.lon)
     }));
+
+    // Cache the results
+    setCache(cache.locations, cacheKey, results);
+    return results;
   } catch {
     return [];
   }
@@ -291,10 +360,16 @@ export async function fetchForecastWeather(
   longitude: number,
   targetDate: Date
 ): Promise<WeatherData | null> {
-  try {
-    // Format date for API
-    const dateStr = targetDate.toISOString().split('T')[0];
+  // Format date for API and cache key
+  const dateStr = targetDate.toISOString().split('T')[0];
+  const targetHour = targetDate.getHours();
+  const cacheKey = `${latitude.toFixed(2)},${longitude.toFixed(2)},${dateStr},${targetHour}`;
 
+  // Check cache first
+  const cached = getCached(cache.forecast, cacheKey, CACHE_TTL.forecast);
+  if (cached) return cached;
+
+  try {
     const url = new URL(WEATHER_API);
     url.searchParams.set('latitude', latitude.toString());
     url.searchParams.set('longitude', longitude.toString());
@@ -310,7 +385,6 @@ export async function fetchForecastWeather(
     const data: OpenMeteoForecastResponse = await response.json();
 
     // Find the hour closest to target time
-    const targetHour = targetDate.getHours();
     const hourIndex = Math.min(targetHour, data.hourly.time.length - 1);
 
     const sunrise = new Date(data.daily.sunrise[0]);
@@ -341,10 +415,10 @@ export async function fetchForecastWeather(
       data.hourly.weather_code[hourIndex]
     );
 
-    // Get location name via reverse geocoding
+    // Get location name via reverse geocoding (also cached)
     const locationName = await reverseGeocode(latitude, longitude);
 
-    return {
+    const result: WeatherData = {
       conditions: weatherInfo.condition,
       description: weatherInfo.description,
       cloudCover,
@@ -355,33 +429,30 @@ export async function fetchForecastWeather(
       locationName,
       updatedAt: Date.now(),
     };
+
+    // Cache the result
+    setCache(cache.forecast, cacheKey, result);
+    return result;
   } catch (error) {
     console.error('Forecast fetch error:', error);
     return null;
   }
 }
 
-// Sun times interface with all photography-relevant times
-export interface SunTimes {
-  sunrise: Date;
-  sunset: Date;
-  goldenMorning: Date;
-  goldenEvening: Date;
-  midMorning: Date;
-  midday: Date;
-  midAfternoon: Date;
-  twilight: Date;
-}
-
-// Get sunrise/sunset times for a location and date
+// Get sunrise/sunset times for a location and date - with caching
 export async function getSunTimes(
   latitude: number,
   longitude: number,
   date: Date
 ): Promise<SunTimes | null> {
-  try {
-    const dateStr = date.toISOString().split('T')[0];
+  const dateStr = date.toISOString().split('T')[0];
+  const cacheKey = `${latitude.toFixed(2)},${longitude.toFixed(2)},${dateStr}`;
 
+  // Check cache first
+  const cached = getCached(cache.sunTimes, cacheKey, CACHE_TTL.sunTimes);
+  if (cached) return cached;
+
+  try {
     const url = new URL(WEATHER_API);
     url.searchParams.set('latitude', latitude.toString());
     url.searchParams.set('longitude', longitude.toString());
@@ -418,7 +489,11 @@ export async function getSunTimes(
     // Twilight - 30 min after sunset
     const twilight = new Date(sunset.getTime() + 30 * 60 * 1000);
 
-    return { sunrise, sunset, goldenMorning, goldenEvening, midMorning, midday, midAfternoon, twilight };
+    const result = { sunrise, sunset, goldenMorning, goldenEvening, midMorning, midday, midAfternoon, twilight };
+
+    // Cache the result
+    setCache(cache.sunTimes, cacheKey, result);
+    return result;
   } catch {
     return null;
   }
