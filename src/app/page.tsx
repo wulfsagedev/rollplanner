@@ -10,7 +10,7 @@ import { SelectorCard } from '@/components/SelectorCard';
 import { GuidanceCard, GuidanceRow, MeteringTip } from '@/components/GuidanceCard';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
 import { ShootPlanner } from '@/components/ShootPlanner';
-import { WeatherData } from '@/lib/types';
+import { WeatherData, LightCondition } from '@/lib/types';
 import {
   HarshLightIcon,
   BrightLightIcon,
@@ -35,6 +35,32 @@ import {
 } from '@/components/icons';
 import { getExposureGuidance, getMeteringTips, DISCIPLINES } from '@/lib/recommendation';
 import { formatRollNumber, formatDate } from '@/lib/utils';
+
+// Derive light condition from weather forecast
+function deriveLightFromWeather(weather: WeatherData): LightCondition {
+  const { sunPosition, cloudCover } = weather;
+
+  // Night/twilight = dark or dim
+  if (sunPosition === 'night') return 'dark';
+  if (sunPosition === 'twilight') return 'dim';
+
+  // Golden hour with clear skies = bright, with clouds = mixed
+  if (sunPosition === 'golden') {
+    return cloudCover > 50 ? 'mixed' : 'bright';
+  }
+
+  // High sun (midday)
+  if (sunPosition === 'high') {
+    if (cloudCover > 80) return 'flat';
+    if (cloudCover > 40) return 'mixed';
+    return 'harsh';
+  }
+
+  // Low sun (morning/afternoon)
+  if (cloudCover > 70) return 'flat';
+  if (cloudCover > 30) return 'mixed';
+  return 'bright';
+}
 
 export default function Home() {
   const {
@@ -63,14 +89,19 @@ export default function Home() {
 
   const handleForecastChange = useCallback((forecast: WeatherData | null) => {
     setPlannedWeather(forecast);
-  }, []);
+    // Auto-set light based on forecast conditions
+    if (forecast) {
+      setLight(deriveLightFromWeather(forecast));
+    }
+  }, [setLight]);
 
   const handleModeChange = useCallback((planning: boolean) => {
     setIsPlanning(planning);
     if (!planning) {
       setPlannedWeather(null);
+      setLight(null); // Reset light selection when exiting planning mode
     }
-  }, []);
+  }, [setLight]);
 
   return (
     <main className="app-container">
@@ -117,28 +148,30 @@ export default function Home() {
             />
           </div>
 
-          {/* Light Selector */}
-          <div className="selector-group">
-            <div className="selector-label">Light</div>
-            <div className="selector-options">
-              {([
-                { value: 'harsh', label: 'Harsh', icon: HarshLightIcon },
-                { value: 'bright', label: 'Bright', icon: BrightLightIcon },
-                { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
-                { value: 'flat', label: 'Flat', icon: FlatLightIcon },
-                { value: 'dim', label: 'Dim', icon: DimLightIcon },
-                { value: 'dark', label: 'Dark', icon: DarkLightIcon }
-              ] as const).map(({ value, label, icon: Icon }) => (
-                <SelectorCard
-                  key={value}
-                  icon={<Icon className="w-full h-full" />}
-                  label={label}
-                  selected={state.light === value}
-                  onClick={() => setLight(state.light === value ? null : value)}
-                />
-              ))}
+          {/* Light Selector - hidden when planning (forecast provides light info) */}
+          {!isPlanning && (
+            <div className="selector-group">
+              <div className="selector-label">Light</div>
+              <div className="selector-options">
+                {([
+                  { value: 'harsh', label: 'Harsh', icon: HarshLightIcon },
+                  { value: 'bright', label: 'Bright', icon: BrightLightIcon },
+                  { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
+                  { value: 'flat', label: 'Flat', icon: FlatLightIcon },
+                  { value: 'dim', label: 'Dim', icon: DimLightIcon },
+                  { value: 'dark', label: 'Dark', icon: DarkLightIcon }
+                ] as const).map(({ value, label, icon: Icon }) => (
+                  <SelectorCard
+                    key={value}
+                    icon={<Icon className="w-full h-full" />}
+                    label={label}
+                    selected={state.light === value}
+                    onClick={() => setLight(state.light === value ? null : value)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Environment Selector */}
           <div className="selector-group">
