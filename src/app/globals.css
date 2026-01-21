@@ -119,6 +119,61 @@
 }
 
 /* ============================================
+   TIME-OF-DAY THEMES
+   Dynamic theming based on selected shoot time
+   ============================================ */
+
+/* Sunrise - Warm pink/orange tint */
+.time-sunrise {
+  --bg: #f5e8e4;
+  --bg-inset: #eddcd6;
+  --led-on: #ff7b54;
+  --led-on-glow: rgba(255, 123, 84, 0.6);
+  --led-on-deep: #e85d3a;
+}
+
+/* Golden Hour - Warm amber/orange glow */
+.time-golden {
+  --bg: #f7ebe0;
+  --bg-inset: #efe0d2;
+  --led-on: #ff9500;
+  --led-on-glow: rgba(255, 149, 0, 0.7);
+  --led-on-deep: #e88600;
+}
+
+/* Blue Hour - Cool blue tint, darker */
+.time-blue-hour {
+  --bg: #d8dfe8;
+  --bg-inset: #ccd4de;
+  --led-on: #5b9bd5;
+  --led-on-glow: rgba(91, 155, 213, 0.6);
+  --led-on-deep: #4a8bc5;
+  --text-secondary: #4a5568;
+  --text-tertiary: #5a6978;
+}
+
+/* Night - Dark mode with cool tones */
+.time-night {
+  --bg: #1e1e22;
+  --bg-inset: #16161a;
+  --text-primary: #e8e8ec;
+  --text-secondary: #a0a0a8;
+  --text-tertiary: #606068;
+  --text-engraved: #505058;
+  --led-off: #38383c;
+  --led-on: #6b8cff;
+  --led-on-glow: rgba(107, 140, 255, 0.5);
+  --led-on-deep: #5070e0;
+  --bevel-light: rgba(255, 255, 255, 0.06);
+  --bevel-dark: rgba(0, 0, 0, 0.5);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --cavity: #0c0c0e;
+  --cavity-floor: #060608;
+}
+
+/* ============================================
    BASE STYLES
    ============================================ */
 

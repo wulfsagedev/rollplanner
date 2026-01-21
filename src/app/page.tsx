@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { useWeather } from '@/hooks/useWeather';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -9,7 +9,7 @@ import { Button } from '@/components/Button';
 import { SelectorCard } from '@/components/SelectorCard';
 import { GuidanceCard, GuidanceRow, MeteringTip } from '@/components/GuidanceCard';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
-import { ShootPlanner } from '@/components/ShootPlanner';
+import { ShootPlanner, TimeOfDay } from '@/components/ShootPlanner';
 import { WeatherData, LightCondition } from '@/lib/types';
 import {
   HarshLightIcon,
@@ -83,9 +83,34 @@ export default function Home() {
   // Planned shoot state
   const [isPlanning, setIsPlanning] = useState(false);
   const [plannedWeather, setPlannedWeather] = useState<WeatherData | null>(null);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(null);
 
   // Use planned weather if planning, otherwise current weather
   const weather = isPlanning && plannedWeather ? plannedWeather : currentWeather;
+
+  // Apply time-of-day theme when planning
+  useEffect(() => {
+    const html = document.documentElement;
+    const timeClasses = ['time-sunrise', 'time-golden', 'time-blue-hour', 'time-night'];
+
+    // Add transition for smooth theme changes
+    html.classList.add('theme-transitioning');
+
+    // Remove all time classes first
+    timeClasses.forEach(cls => html.classList.remove(cls));
+
+    // Apply new time class if set
+    if (timeOfDay) {
+      html.classList.add(`time-${timeOfDay}`);
+    }
+
+    // Remove transition class after animation
+    const timer = setTimeout(() => {
+      html.classList.remove('theme-transitioning');
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [timeOfDay]);
 
   const handleForecastChange = useCallback((forecast: WeatherData | null) => {
     setPlannedWeather(forecast);
@@ -100,8 +125,13 @@ export default function Home() {
     if (!planning) {
       setPlannedWeather(null);
       setLight(null); // Reset light selection when exiting planning mode
+      setTimeOfDay(null); // Reset time-of-day theme when exiting planning mode
     }
   }, [setLight]);
+
+  const handleTimeOfDayChange = useCallback((newTimeOfDay: TimeOfDay) => {
+    setTimeOfDay(newTimeOfDay);
+  }, []);
 
   return (
     <main className="app-container">
@@ -130,6 +160,7 @@ export default function Home() {
           <ShootPlanner
             onForecastChange={handleForecastChange}
             onModeChange={handleModeChange}
+            onTimeOfDayChange={handleTimeOfDayChange}
           />
 
           {/* Film Toggles */}
@@ -153,12 +184,12 @@ export default function Home() {
             <div className="selector-label">Light</div>
             <div className="selector-options">
               {([
-                { value: 'harsh', label: 'Harsh', icon: HarshLightIcon },
+                { value: 'harsh', label: 'High Sun', icon: HarshLightIcon },
                 { value: 'bright', label: 'Bright', icon: BrightLightIcon },
                 { value: 'mixed', label: 'Mixed', icon: MixedLightIcon },
-                { value: 'flat', label: 'Flat', icon: FlatLightIcon },
-                { value: 'dim', label: 'Dim', icon: DimLightIcon },
-                { value: 'dark', label: 'Dark', icon: DarkLightIcon }
+                { value: 'flat', label: 'Overcast', icon: FlatLightIcon },
+                { value: 'dim', label: 'Blue Hour', icon: DimLightIcon },
+                { value: 'dark', label: 'Night', icon: DarkLightIcon }
               ] as const).map(({ value, label, icon: Icon }) => (
                 <SelectorCard
                   key={value}

@@ -4,9 +4,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { WeatherData } from '@/lib/types';
 import { searchLocations, fetchForecastWeather, getSunTimes, LocationResult, SunTimes } from '@/lib/weather';
 
+// Time-of-day theme types for dynamic theming
+export type TimeOfDay = 'sunrise' | 'golden' | 'day' | 'blue-hour' | 'night' | null;
+
 interface ShootPlannerProps {
   onForecastChange: (weather: WeatherData | null) => void;
   onModeChange: (isPlanning: boolean) => void;
+  onTimeOfDayChange?: (timeOfDay: TimeOfDay) => void;
 }
 
 function formatTime(date: Date): string {
@@ -14,19 +18,21 @@ function formatTime(date: Date): string {
 }
 
 // Time slot configuration with photography-focused descriptions
+// timeOfDay controls dynamic theme: sunrise, golden, day, blue-hour, night
 const TIME_SLOTS = [
-  { key: 'sunrise', label: 'Sunrise', desc: 'First Light' },
-  { key: 'goldenMorning', label: 'Golden AM', desc: 'Warm Tones' },
-  { key: 'midMorning', label: 'Morning', desc: 'Soft Light' },
-  { key: 'midday', label: 'Midday', desc: 'High Sun' },
-  { key: 'midAfternoon', label: 'Afternoon', desc: 'Angled Light' },
-  { key: 'goldenEvening', label: 'Golden PM', desc: 'Warm Tones' },
-  { key: 'sunset', label: 'Sunset', desc: 'Last Light' },
-  { key: 'twilight', label: 'Blue Hour', desc: 'Cool Tones' },
+  { key: 'sunrise', label: 'Sunrise', desc: 'First Light', timeOfDay: 'sunrise' as TimeOfDay },
+  { key: 'goldenMorning', label: 'Golden AM', desc: 'Warm Tones', timeOfDay: 'golden' as TimeOfDay },
+  { key: 'midMorning', label: 'Morning', desc: 'Soft Light', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midday', label: 'Midday', desc: 'High Sun', timeOfDay: 'day' as TimeOfDay },
+  { key: 'midAfternoon', label: 'Afternoon', desc: 'Angled Light', timeOfDay: 'day' as TimeOfDay },
+  { key: 'goldenEvening', label: 'Golden PM', desc: 'Warm Tones', timeOfDay: 'golden' as TimeOfDay },
+  { key: 'twilight', label: 'Blue Hour', desc: 'Cool Tones', timeOfDay: 'blue-hour' as TimeOfDay },
+  { key: 'night', label: 'Night', desc: 'Low Light', timeOfDay: 'night' as TimeOfDay },
 ] as const;
 
-export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerProps) {
+export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange }: ShootPlannerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
@@ -75,8 +81,10 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
       setSunTimes(times);
       // Auto-select golden evening as default (most popular shoot time)
       setSelectedTime(formatTime(times.goldenEvening));
+      setSelectedTimeSlot('goldenEvening');
+      onTimeOfDayChange?.('golden');
     }
-  }, [selectedDate]);
+  }, [selectedDate, onTimeOfDayChange]);
 
   // Fast debounced location search - 100ms for instant feel
   useEffect(() => {
@@ -215,8 +223,10 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     setSearchResults([]);
     setShowResults(false);
     setSelectedTime('');
+    setSelectedTimeSlot(null);
     onForecastChange(null);
     onModeChange(false);
+    onTimeOfDayChange?.(null);
     setIsExpanded(false);
   };
 
@@ -226,9 +236,11 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const setQuickTime = useCallback((time: Date) => {
+  const handleTimeSlotSelect = useCallback((time: Date, slotKey: string, timeOfDay: TimeOfDay) => {
     setSelectedTime(formatTime(time));
-  }, []);
+    setSelectedTimeSlot(slotKey);
+    onTimeOfDayChange?.(timeOfDay);
+  }, [onTimeOfDayChange]);
 
   if (!isExpanded) {
     return (
@@ -349,14 +361,14 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
         <div className="shoot-planner-section">
           <div className="shoot-planner-section-label">Time</div>
           <div className="shoot-planner-times-grid">
-            {TIME_SLOTS.map(({ key, label, desc }) => {
+            {TIME_SLOTS.map(({ key, label, desc, timeOfDay }) => {
               const time = sunTimes[key as keyof SunTimes];
               const timeStr = formatTime(time);
               return (
                 <button
                   key={key}
-                  onClick={() => setQuickTime(time)}
-                  className={`shoot-planner-time-btn ${selectedTime === timeStr ? 'active' : ''}`}
+                  onClick={() => handleTimeSlotSelect(time, key, timeOfDay)}
+                  className={`shoot-planner-time-btn ${selectedTimeSlot === key ? 'active' : ''}`}
                   title={desc}
                 >
                   <span className="shoot-planner-time-value">{timeStr}</span>
@@ -376,10 +388,10 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
               <span className="shoot-planner-loading-led" />
               <span className="shoot-planner-loading-text">Loading forecast...</span>
             </div>
-          ) : forecast && (
+          ) : forecast && selectedLocation && (
             <>
               <div className="shoot-planner-forecast-header">
-                <span className="shoot-planner-forecast-location">{forecast.locationName}</span>
+                <span className="shoot-planner-forecast-location">{selectedLocation.name}</span>
                 <span className="shoot-planner-forecast-sun">{forecast.sunPosition}</span>
               </div>
               <div className="shoot-planner-forecast-condition">{forecast.conditions}</div>

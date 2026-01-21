@@ -61,6 +61,7 @@ export interface SunTimes {
   midday: Date;
   midAfternoon: Date;
   twilight: Date;
+  night: Date;
 }
 
 interface OpenMeteoResponse {
@@ -525,10 +526,13 @@ export async function getSunTimes(
     // Mid afternoon - 75% through the day
     const midAfternoon = new Date(sunrise.getTime() + dayLength * 0.75);
 
-    // Twilight - 30 min after sunset
+    // Twilight (Blue Hour) - 30 min after sunset
     const twilight = new Date(sunset.getTime() + 30 * 60 * 1000);
 
-    const result = { sunrise, sunset, goldenMorning, goldenEvening, midMorning, midday, midAfternoon, twilight };
+    // Night - 90 min after sunset (astronomical twilight ends)
+    const night = new Date(sunset.getTime() + 90 * 60 * 1000);
+
+    const result = { sunrise, sunset, goldenMorning, goldenEvening, midMorning, midday, midAfternoon, twilight, night };
 
     // Cache the result
     setCache(cache.sunTimes, cacheKey, result);
