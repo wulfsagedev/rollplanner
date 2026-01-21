@@ -426,10 +426,6 @@ body::before {
   gap: var(--space-2);
 }
 
-.selector-options.cols-4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
 /* ============================================
    SELECTOR OPTION — Raised OP-1 style button
    ============================================ */

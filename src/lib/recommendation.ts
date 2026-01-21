@@ -42,7 +42,8 @@ const ENVIRONMENT_PREFERENCES: Record<Environment, {
   street: { grain: 'any', contrast: 'high', skinTones: false },
   architecture: { grain: 'low', contrast: 'medium', skinTones: false },
   interiors: { grain: 'medium', contrast: 'low', skinTones: false },
-  landscape: { grain: 'low', contrast: 'medium', skinTones: false }
+  landscape: { grain: 'low', contrast: 'medium', skinTones: false },
+  nature: { grain: 'low', contrast: 'medium', skinTones: false }
 };
 
 // Intent modifiers
@@ -54,7 +55,9 @@ const INTENT_MODIFIERS: Record<Intent, {
   calm: { saturationBonus: -1, contrastBonus: -1, grainTolerance: 0 },
   graphic: { saturationBonus: 1, contrastBonus: 2, grainTolerance: 0 },
   emotional: { saturationBonus: 0, contrastBonus: 0, grainTolerance: 2 },
-  documentary: { saturationBonus: 0, contrastBonus: 0, grainTolerance: 1 }
+  documentary: { saturationBonus: 0, contrastBonus: 0, grainTolerance: 1 },
+  narrative: { saturationBonus: 0, contrastBonus: 1, grainTolerance: 1 },
+  abstract: { saturationBonus: 1, contrastBonus: 1, grainTolerance: 2 }
 };
 
 // Exposure guidance sentences
@@ -280,7 +283,8 @@ export function getMeteringTips(
     street: 'Pre-meter for the light you expect. Zone V for pavement.',
     architecture: 'Meter a grey card or neutral surface in the same light.',
     interiors: 'Meter the brightest area you want detail in, then open 2 stops.',
-    landscape: 'Meter the sky 1 stop above the ground reading.'
+    landscape: 'Meter the sky 1 stop above the ground reading.',
+    nature: 'Get close. Meter the subject directly, watch for shadows.'
   };
   tips.primary = envTips[environment];
 
@@ -314,5 +318,7 @@ export const DISCIPLINES: Record<Intent, string> = {
   calm: 'Slow down. Wait for stillness.',
   graphic: 'Find the geometry. Commit to the frame.',
   emotional: 'Follow the feeling, not the subject.',
-  documentary: "Stay present. Don't chase moments."
+  documentary: "Stay present. Don't chase moments.",
+  narrative: 'Every frame tells part of the story.',
+  abstract: 'Break the rules. Trust your eye.'
 };

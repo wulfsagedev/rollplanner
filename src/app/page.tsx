@@ -20,10 +20,13 @@ import {
   ArchitectureIcon,
   InteriorsIcon,
   LandscapeIcon,
+  NatureIcon,
   MinimalIcon,
   GraphicIcon,
   ExpressiveIcon,
   DocumentaryIcon,
+  NarrativeIcon,
+  AbstractIcon,
   ExposureIcon,
   MeteringIcon
 } from '@/components/icons';
@@ -112,9 +115,10 @@ export default function Home() {
               {([
                 { value: 'portrait', label: 'Portrait', icon: PortraitIcon },
                 { value: 'street', label: 'Street', icon: StreetIcon },
-                { value: 'architecture', label: 'Architecture', icon: ArchitectureIcon },
+                { value: 'architecture', label: 'Archi', icon: ArchitectureIcon },
                 { value: 'interiors', label: 'Interiors', icon: InteriorsIcon },
-                { value: 'landscape', label: 'Landscape', icon: LandscapeIcon }
+                { value: 'landscape', label: 'Landscape', icon: LandscapeIcon },
+                { value: 'nature', label: 'Nature', icon: NatureIcon }
               ] as const).map(({ value, label, icon: Icon }) => (
                 <SelectorCard
                   key={value}
@@ -130,12 +134,14 @@ export default function Home() {
           {/* Intent Selector */}
           <div className="selector-group">
             <div className="selector-label">Intent</div>
-            <div className="selector-options cols-4">
+            <div className="selector-options">
               {([
                 { value: 'calm', label: 'Minimal', icon: MinimalIcon },
                 { value: 'graphic', label: 'Graphic', icon: GraphicIcon },
                 { value: 'emotional', label: 'Expressive', icon: ExpressiveIcon },
-                { value: 'documentary', label: 'Documentary', icon: DocumentaryIcon }
+                { value: 'documentary', label: 'Document', icon: DocumentaryIcon },
+                { value: 'narrative', label: 'Narrative', icon: NarrativeIcon },
+                { value: 'abstract', label: 'Abstract', icon: AbstractIcon }
               ] as const).map(({ value, label, icon: Icon }) => (
                 <SelectorCard
                   key={value}
