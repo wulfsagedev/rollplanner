@@ -38,34 +38,72 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
   const [forecast, setForecast] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSelectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Handle location selection
+  const selectLocation = useCallback((location: LocationResult) => {
+    setSelectedLocation(location);
+    setSearchQuery(location.name);
+    setShowResults(false);
+    setSearchResults([]);
+  }, []);
 
   // Debounced location search
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
+    if (autoSelectTimeoutRef.current) {
+      clearTimeout(autoSelectTimeoutRef.current);
+    }
 
     if (searchQuery.length < 2) {
       setSearchResults([]);
       setShowResults(false);
+      setIsSearching(false);
       return;
     }
+
+    // Don't search if we already have a selected location matching the query
+    if (selectedLocation && selectedLocation.name.toUpperCase() === searchQuery.toUpperCase()) {
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
 
     searchTimeoutRef.current = setTimeout(async () => {
       const results = await searchLocations(searchQuery);
       setSearchResults(results);
-      setShowResults(results.length > 0);
-    }, 300);
+      setIsSearching(false);
+
+      if (results.length > 0) {
+        setShowResults(true);
+
+        // Auto-select the first result after 2 seconds if user doesn't pick one
+        autoSelectTimeoutRef.current = setTimeout(() => {
+          if (results.length > 0) {
+            selectLocation(results[0]);
+          }
+        }, 2000);
+      } else {
+        setShowResults(false);
+      }
+    }, 500);
 
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      if (autoSelectTimeoutRef.current) {
+        clearTimeout(autoSelectTimeoutRef.current);
+      }
     };
-  }, [searchQuery]);
+  }, [searchQuery, selectedLocation, selectLocation]);
 
   // Fetch sun times when location or date changes
   useEffect(() => {
@@ -74,17 +112,17 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
       return;
     }
 
-    const fetchSunTimes = async () => {
+    const fetchSunTimesData = async () => {
       const date = new Date(selectedDate);
       const times = await getSunTimes(selectedLocation.lat, selectedLocation.lon, date);
       setSunTimes(times);
     };
 
-    fetchSunTimes();
+    fetchSunTimesData();
   }, [selectedLocation, selectedDate]);
 
   // Fetch forecast when location, date, or time changes
-  const fetchForecast = useCallback(async () => {
+  const fetchForecastData = useCallback(async () => {
     if (!selectedLocation) {
       setForecast(null);
       onForecastChange(null);
@@ -110,20 +148,17 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
 
   useEffect(() => {
     if (selectedLocation) {
-      fetchForecast();
+      fetchForecastData();
     }
-  }, [selectedLocation, selectedDate, selectedTime, fetchForecast]);
-
-  const handleLocationSelect = (location: LocationResult) => {
-    setSelectedLocation(location);
-    setSearchQuery(location.name);
-    setShowResults(false);
-  };
+  }, [selectedLocation, selectedDate, selectedTime, fetchForecastData]);
 
   const handleClear = () => {
     setSelectedLocation(null);
     setSearchQuery('');
     setForecast(null);
+    setSunTimes(null);
+    setSearchResults([]);
+    setShowResults(false);
     onForecastChange(null);
     onModeChange(false);
     setIsExpanded(false);
@@ -183,35 +218,44 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
             ref={inputRef}
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              // Clear selected location when user types
+              if (selectedLocation && e.target.value !== selectedLocation.name) {
+                setSelectedLocation(null);
+              }
+            }}
             placeholder="Search city or place..."
             className="shoot-planner-input"
-            onFocus={() => searchResults.length > 0 && setShowResults(true)}
+            onFocus={() => searchResults.length > 0 && !selectedLocation && setShowResults(true)}
+            onBlur={() => {
+              // Delay hiding results to allow click
+              setTimeout(() => setShowResults(false), 200);
+            }}
           />
-          {selectedLocation && (
-            <button
-              onClick={() => {
-                setSelectedLocation(null);
-                setSearchQuery('');
-                setForecast(null);
-                onForecastChange(null);
-              }}
-              className="shoot-planner-clear"
-            >
-              <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+          {(selectedLocation || isSearching) && (
+            <div className="shoot-planner-status">
+              {isSearching ? (
+                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>...</span>
+              ) : selectedLocation ? (
+                <svg style={{ width: 14, height: 14, color: 'var(--led-on)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : null}
+            </div>
           )}
         </div>
 
         {/* Search Results Dropdown */}
-        {showResults && (
+        {showResults && searchResults.length > 0 && (
           <div className="shoot-planner-results">
             {searchResults.map((result, index) => (
               <button
                 key={index}
-                onClick={() => handleLocationSelect(result)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectLocation(result);
+                }}
                 className="shoot-planner-result"
               >
                 <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -224,6 +268,13 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* No results message */}
+        {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && !selectedLocation && (
+          <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            No locations found
           </div>
         )}
       </div>
@@ -252,7 +303,7 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
           className="shoot-planner-input"
         />
 
-        {/* Quick Time Buttons */}
+        {/* Quick Time Buttons - show when location is selected */}
         {sunTimes && (
           <div className="shoot-planner-quick-times">
             <button
@@ -302,6 +353,20 @@ export function ShootPlanner({ onForecastChange, onModeChange }: ShootPlannerPro
           <div className="shoot-planner-forecast-note">
             {forecast.shootingNote}
           </div>
+        </div>
+      )}
+
+      {/* Help text when no location selected */}
+      {!selectedLocation && !loading && !forecast && (
+        <div style={{
+          fontSize: 10,
+          color: 'var(--text-tertiary)',
+          textAlign: 'center',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          padding: 'var(--space-3)'
+        }}>
+          Search and select a location to see forecast
         </div>
       )}
     </div>

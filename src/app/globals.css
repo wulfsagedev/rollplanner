@@ -1532,6 +1532,16 @@ body::before {
   color: var(--text-primary);
 }
 
+.shoot-planner-status {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .shoot-planner-results {
   position: absolute;
   top: calc(100% + var(--space-1));
