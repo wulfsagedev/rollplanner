@@ -103,26 +103,47 @@ export function useWeather(): UseWeatherResult {
       return;
     }
 
-    // Get initial position
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        fetchWeatherData(position.coords.latitude, position.coords.longitude, true);
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocationDenied(true);
-          setError('Location access denied');
-        } else {
-          setError('Unable to get location');
+    // Check permission status FIRST using Permissions API (instant response)
+    // This avoids the 10-second timeout when permission is already denied
+    const checkPermissionAndFetch = async () => {
+      // Try Permissions API first for instant denial detection
+      if (navigator.permissions) {
+        try {
+          const permission = await navigator.permissions.query({ name: 'geolocation' });
+          if (permission.state === 'denied') {
+            setLocationDenied(true);
+            setError('Location access denied');
+            setLoading(false);
+            return; // Don't proceed to geolocation
+          }
+        } catch {
+          // Permissions API not supported, fall through to geolocation
         }
-        setLoading(false);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 60000
       }
-    );
+
+      // Get initial position
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeatherData(position.coords.latitude, position.coords.longitude, true);
+        },
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            setLocationDenied(true);
+            setError('Location access denied');
+          } else {
+            setError('Unable to get location');
+          }
+          setLoading(false);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    };
+
+    checkPermissionAndFetch();
 
     // Watch for position changes
     watchIdRef.current = navigator.geolocation.watchPosition(
