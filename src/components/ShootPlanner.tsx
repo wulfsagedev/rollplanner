@@ -54,7 +54,6 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingSunTimes, setIsLoadingSunTimes] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [isPreloading, setIsPreloading] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,7 +77,6 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
     dateStr: string,
     times: SunTimes
   ) => {
-    setIsPreloading(true);
     const newCache = new Map<string, WeatherData>();
 
     // Fetch all time slots in parallel
@@ -110,7 +108,6 @@ export function ShootPlanner({ onForecastChange, onModeChange, onTimeOfDayChange
       newCache.forEach((value, key) => merged.set(key, value));
       return merged;
     });
-    setIsPreloading(false);
 
     return newCache;
   }, []);

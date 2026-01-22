@@ -507,6 +507,108 @@ export function getRecommendation(
 }
 
 // ============================================
+// GUIDANCE FOR SPECIFIC FILM
+// When user says "I have this film"
+// ============================================
+
+export function getGuidanceForFilm(
+  filmKey: string,
+  light: LightCondition | null,
+  weather: WeatherData | null,
+  filmType: FilmType
+): Recommendation {
+  const film = FILM_DATABASE[filmKey];
+  if (!film) {
+    return {
+      film: 'Unknown film',
+      ei: 400,
+      exposure: 'Check your film selection',
+      adjustments: []
+    };
+  }
+
+  // Determine light conditions from weather if not specified
+  let effectiveLight: LightCondition = light || 'mixed';
+  if (!light && weather) {
+    // Derive light from weather
+    if (weather.sunPosition === 'night') effectiveLight = 'dark';
+    else if (weather.sunPosition === 'twilight') effectiveLight = 'dim';
+    else if (weather.sunPosition === 'golden') effectiveLight = 'bright';
+    else if (weather.cloudCover > 80) effectiveLight = 'flat';
+    else if (weather.cloudCover > 40) effectiveLight = 'mixed';
+    else if (weather.sunPosition === 'high') effectiveLight = 'harsh';
+    else effectiveLight = 'bright';
+  }
+
+  const isoNeeds = LIGHT_ISO_NEEDS[effectiveLight];
+
+  // Determine optimal EI
+  let ei = film.iso;
+  let pushStops = 0;
+  let pullStops = 0;
+
+  // Adjust EI based on conditions
+  if (film.iso < isoNeeds.min && film.pushStops > 0) {
+    // Need to push
+    const stopsNeeded = Math.ceil(Math.log2(isoNeeds.ideal / film.iso));
+    pushStops = Math.min(stopsNeeded, film.pushStops);
+    ei = film.iso * Math.pow(2, pushStops);
+  } else if (film.iso > isoNeeds.max && film.pullStops > 0) {
+    // Can pull for smoother results
+    const stopsSurplus = Math.ceil(Math.log2(film.iso / isoNeeds.ideal));
+    pullStops = Math.min(stopsSurplus, film.pullStops);
+    ei = film.iso / Math.pow(2, pullStops);
+  }
+
+  // Get exposure guidance
+  const exposureType = filmType === 'color' ? 'color' : 'bw';
+  let exposure = EXPOSURE_GUIDANCE[exposureType][effectiveLight];
+
+  // Enhance with film-specific advice
+  if (film.latitude >= 8) {
+    exposure = 'Expose for shadows. This film has great latitude.';
+  } else if (film.latitude <= 4) {
+    exposure = 'Meter carefully. Limited latitude - expose precisely.';
+  }
+
+  // Weather context
+  if (weather) {
+    if (weather.sunPosition === 'golden') {
+      exposure = filmType === 'color'
+        ? 'Golden hour magic. Overexpose slightly for warm shadows.'
+        : 'Open shadows with warm light. Develop normally.';
+    } else if (weather.sunPosition === 'twilight') {
+      exposure = 'Fading light. Meter for highlights, let shadows fall.';
+    } else if (weather.cloudCover > 80) {
+      exposure = 'Soft, even light. Trust your meter. Great latitude.';
+    }
+  }
+
+  // Build adjustments list
+  const adjustments: string[] = [];
+
+  if (pushStops > 0) {
+    adjustments.push(`Push ${pushStops} stop${pushStops > 1 ? 's' : ''} in development`);
+  }
+  if (pullStops > 0) {
+    adjustments.push(`Pull ${pullStops} stop${pullStops > 1 ? 's' : ''} for smoother tones`);
+  }
+  if ((effectiveLight === 'dim' || effectiveLight === 'dark') && film.reciprocityStart < 10) {
+    adjustments.push('Compensate for reciprocity on long exposures');
+  }
+  if (effectiveLight === 'dim' || effectiveLight === 'dark') {
+    adjustments.push('Consider a tripod for sharpness');
+  }
+
+  return {
+    film: film.name,
+    ei,
+    exposure,
+    adjustments
+  };
+}
+
+// ============================================
 // EXPOSURE GUIDANCE
 // Sunny 16 variations with standard camera increments
 // ============================================
@@ -522,11 +624,14 @@ function nearestShutter(target: number): string {
 }
 
 export function getExposureGuidance(
-  light: LightCondition,
+  light: LightCondition | null,
   iso: number,
-  environment: Environment,
+  environment: Environment | null,
   weather?: WeatherData | null
 ): ExposureGuidance {
+  // Default to mixed light if not specified
+  const effectiveLight: LightCondition = light || 'mixed';
+
   // Base settings from Sunny 16 rule
   const exposureSettings: Record<LightCondition, { aperture: string; shutter: string; note: string }> = {
     harsh: { aperture: 'f/16', shutter: nearestShutter(iso), note: 'Bright sun. Watch for harsh shadows.' },
@@ -537,19 +642,19 @@ export function getExposureGuidance(
     dark: { aperture: 'f/2.8', shutter: nearestShutter(iso / 8), note: 'Very low light. Steady hands or support.' }
   };
 
-  const settings = { ...exposureSettings[light] };
+  const settings = { ...exposureSettings[effectiveLight] };
 
-  // Environment adjustments
+  // Environment adjustments (only if environment specified)
   if (environment === 'interiors') {
     settings.note = 'Interior light. Meter for highlights you want to keep.';
-    if (light === 'bright' || light === 'harsh') {
+    if (effectiveLight === 'bright' || effectiveLight === 'harsh') {
       settings.aperture = 'f/5.6';
       settings.shutter = nearestShutter(iso / 4);
     }
   } else if (environment === 'portrait') {
     settings.note = 'Open up for shallow depth. Meter for skin.';
     // Portraits often benefit from wider apertures
-    if (light === 'bright' || light === 'harsh') {
+    if (effectiveLight === 'bright' || effectiveLight === 'harsh') {
       settings.aperture = 'f/4';
       settings.shutter = nearestShutter(iso * 4);
     }
@@ -558,7 +663,7 @@ export function getExposureGuidance(
   } else if (environment === 'nature') {
     settings.note = 'Close focus needs more light. Watch your depth.';
     // Macro work often needs smaller apertures
-    if (light !== 'dim' && light !== 'dark') {
+    if (effectiveLight !== 'dim' && effectiveLight !== 'dark') {
       settings.aperture = 'f/11';
     }
   } else if (environment === 'architecture') {
@@ -586,15 +691,18 @@ export function getExposureGuidance(
 // ============================================
 
 export function getMeteringTips(
-  light: LightCondition,
-  environment: Environment,
-  intent: Intent,
+  light: LightCondition | null,
+  environment: Environment | null,
+  intent: Intent | null,
   weather?: WeatherData | null
 ): MeteringTips {
   const tips: MeteringTips = {
     primary: '',
     secondary: ''
   };
+
+  // Default to mixed light if not specified
+  const effectiveLight: LightCondition = light || 'mixed';
 
   // Primary tip based on environment
   const envTips: Record<Environment, string> = {
@@ -605,10 +713,16 @@ export function getMeteringTips(
     landscape: 'Meter the sky 1 stop above the ground reading.',
     nature: 'Get close. Meter the subject directly, watch for shadows.'
   };
-  tips.primary = envTips[environment];
+
+  // Set primary tip based on environment, or a generic one if not specified
+  if (environment) {
+    tips.primary = envTips[environment];
+  } else {
+    tips.primary = 'Meter for the shadows. Film has good latitude for overexposure.';
+  }
 
   // Secondary tip based on light + intent + weather
-  if (light === 'harsh' || light === 'bright') {
+  if (effectiveLight === 'harsh' || effectiveLight === 'bright') {
     if (intent === 'emotional' || intent === 'abstract') {
       tips.secondary = 'Let shadows go deep for mood. Expose for highlights.';
     } else if (intent === 'graphic') {
@@ -616,19 +730,19 @@ export function getMeteringTips(
     } else {
       tips.secondary = 'Watch contrast. Expose for shadows on negative film.';
     }
-  } else if (light === 'flat') {
+  } else if (effectiveLight === 'flat') {
     if (intent === 'calm') {
       tips.secondary = 'Even light suits your intent. Let colors speak.';
     } else {
       tips.secondary = 'Even light is forgiving. Trust your meter reading.';
     }
-  } else if (light === 'dim' || light === 'dark') {
+  } else if (effectiveLight === 'dim' || effectiveLight === 'dark') {
     if (intent === 'travel' || intent === 'narrative') {
       tips.secondary = 'Push processing can recover 1-2 stops if needed.';
     } else {
       tips.secondary = 'Bracket exposures. Err on the side of overexposure.';
     }
-  } else if (light === 'mixed') {
+  } else if (effectiveLight === 'mixed') {
     tips.secondary = 'Take multiple readings. Expose for your subject.';
   }
 

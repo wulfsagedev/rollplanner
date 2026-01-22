@@ -10,6 +10,9 @@ import { SelectorCard } from '@/components/SelectorCard';
 import { GuidanceCard, GuidanceRow, MeteringTip } from '@/components/GuidanceCard';
 import { WeatherDisplay } from '@/components/WeatherDisplay';
 import { ShootPlanner, TimeOfDay } from '@/components/ShootPlanner';
+import { FilmPicker } from '@/components/FilmPicker';
+import { FrameCounter } from '@/components/FrameCounter';
+import { FrameLogModal } from '@/components/FrameLogModal';
 import { WeatherData, LightCondition } from '@/lib/types';
 import {
   HarshLightIcon,
@@ -34,6 +37,7 @@ import {
   MeteringIcon
 } from '@/components/icons';
 import { getExposureGuidance, getMeteringTips, DISCIPLINES } from '@/lib/recommendation';
+import { exportAsCSV, exportAsJSON, downloadFile, generateFilename, canShare, shareExport } from '@/lib/export';
 import { formatRollNumber, formatDate } from '@/lib/utils';
 
 // Derive light condition from weather forecast
@@ -73,22 +77,35 @@ export default function Home() {
     setFilmFormat,
     canGetRecommendation,
     getRecommendation,
-    lockRoll,
-    startOver,
-    goBack
+    selectFilm,
+    loadRoll,
+    finishRoll,
+    goBack,
+    changeFilm,
+    advanceFrame,
+    previousFrame,
+    setTotalFrames,
+    logFrame,
+    getFrameLog
   } = useAppState();
 
-  const { weather: currentWeather, loading: weatherLoading, error: weatherError } = useWeather();
+  const { weather: currentWeather, loading: weatherLoading, error: weatherError, locationDenied, setManualLocation } = useWeather();
 
   // Planned shoot state
   const [isPlanning, setIsPlanning] = useState(false);
   const [plannedWeather, setPlannedWeather] = useState<WeatherData | null>(null);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(null);
 
+  // Film picker state ("I have this film" flow)
+  const [showFilmPicker, setShowFilmPicker] = useState(false);
+
+  // Frame log modal state
+  const [showFrameLog, setShowFrameLog] = useState(false);
+
   // Use planned weather if planning, otherwise current weather
   const weather = isPlanning && plannedWeather ? plannedWeather : currentWeather;
 
-  // Apply time-of-day theme when planning
+  // Apply time-of-day theme when planning on conditions screen only
   // Time-of-day themes temporarily override the user's theme preference
   useEffect(() => {
     const html = document.documentElement;
@@ -105,16 +122,19 @@ export default function Home() {
     // Remove all time classes first
     timeClasses.forEach(cls => html.classList.remove(cls));
 
-    if (timeOfDay === 'night') {
+    // Only apply time-of-day theme on conditions screen
+    const shouldApplyTimeTheme = screen === 'conditions' && timeOfDay;
+
+    if (shouldApplyTimeTheme && timeOfDay === 'night') {
       // Night uses actual dark mode
       html.classList.add('dark');
-    } else if (timeOfDay) {
+    } else if (shouldApplyTimeTheme && timeOfDay) {
       // Other time-of-day themes temporarily override dark mode
       // Remove dark class while previewing daytime themes
       html.classList.remove('dark');
       html.classList.add(`time-${timeOfDay}`);
     } else {
-      // No time-of-day selected - restore user's theme preference
+      // No time-of-day theme or not on conditions screen - restore user's theme preference
       if (userPrefersDark) {
         html.classList.add('dark');
       } else {
@@ -128,7 +148,7 @@ export default function Home() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [timeOfDay]);
+  }, [timeOfDay, screen]);
 
   const handleForecastChange = useCallback((forecast: WeatherData | null) => {
     setPlannedWeather(forecast);
@@ -152,15 +172,43 @@ export default function Home() {
     setTimeOfDay(newTimeOfDay);
   }, []);
 
+  const handleSelectFilm = useCallback((filmKey: string) => {
+    selectFilm(filmKey);
+    setShowFilmPicker(false);
+  }, [selectFilm]);
+
+  // Export handlers
+  const handleExportCSV = useCallback(() => {
+    const csv = exportAsCSV(state);
+    const filename = generateFilename(state, 'csv');
+    downloadFile(csv, filename, 'text/csv');
+  }, [state]);
+
+  const handleExportJSON = useCallback(() => {
+    const json = exportAsJSON(state);
+    const filename = generateFilename(state, 'json');
+    downloadFile(json, filename, 'application/json');
+  }, [state]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await shareExport(state);
+    } catch {
+      // Fallback to CSV download if share fails
+      handleExportCSV();
+    }
+  }, [state, handleExportCSV]);
+
   return (
     <main className="app-container">
       {/* Persistent Header */}
       <header className="persistent-header">
         <div className="app-brand">
           <h1 className="app-title">Roll Planner</h1>
-          <span className="app-version">v1.0</span>
         </div>
-        <ThemeToggle />
+        <div className="header-right">
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Conditions Screen */}
@@ -172,6 +220,8 @@ export default function Home() {
               weather={currentWeather}
               loading={weatherLoading}
               error={weatherError}
+              locationDenied={locationDenied}
+              onManualLocation={setManualLocation}
             />
           </div>
 
@@ -270,19 +320,36 @@ export default function Home() {
           {/* Spacer */}
           <div className="spacer" />
 
-          {/* Plan Roll Button */}
-          <Button
-            onClick={getRecommendation}
-            disabled={!canGetRecommendation}
-            pulse={canGetRecommendation}
-          >
-            Plan Roll
-          </Button>
+          {/* Action Buttons */}
+          {!showFilmPicker ? (
+            <div className="conditions-actions">
+              <Button
+                onClick={getRecommendation}
+                disabled={!canGetRecommendation}
+                pulse={canGetRecommendation}
+              >
+                Plan Roll
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowFilmPicker(true)}
+              >
+                I have this film
+              </Button>
+            </div>
+          ) : (
+            <FilmPicker
+              filmType={state.filmType}
+              filmFormat={state.filmFormat}
+              onSelectFilm={handleSelectFilm}
+              onCancel={() => setShowFilmPicker(false)}
+            />
+          )}
         </div>
       )}
 
       {/* Recommendation Screen */}
-      {screen === 'recommendation' && state.recommendation && state.light && state.environment && state.intent && (
+      {screen === 'recommendation' && state.recommendation && (
         <div className="screen">
           {/* Header Row */}
           <div className="screen-header-row">
@@ -292,20 +359,26 @@ export default function Home() {
             <h2 className="screen-title">Your Roll</h2>
           </div>
 
-          {/* Settings Summary */}
+          {/* Settings Summary - only show items that were selected */}
           <div className="settings-summary">
-            <div className="settings-summary-item">
-              <div className="settings-summary-label">Light</div>
-              <div className="settings-summary-value">{state.light}</div>
-            </div>
-            <div className="settings-summary-item">
-              <div className="settings-summary-label">Environment</div>
-              <div className="settings-summary-value">{state.environment}</div>
-            </div>
-            <div className="settings-summary-item">
-              <div className="settings-summary-label">Intent</div>
-              <div className="settings-summary-value">{state.intent}</div>
-            </div>
+            {state.light && (
+              <div className="settings-summary-item">
+                <div className="settings-summary-label">Light</div>
+                <div className="settings-summary-value">{state.light}</div>
+              </div>
+            )}
+            {state.environment && (
+              <div className="settings-summary-item">
+                <div className="settings-summary-label">Environment</div>
+                <div className="settings-summary-value">{state.environment}</div>
+              </div>
+            )}
+            {state.intent && (
+              <div className="settings-summary-item">
+                <div className="settings-summary-label">Intent</div>
+                <div className="settings-summary-value">{state.intent}</div>
+              </div>
+            )}
             <div className="settings-summary-item">
               <div className="settings-summary-label">Format</div>
               <div className="settings-summary-value">{state.filmFormat} {state.filmType === 'color' ? 'Colour' : 'B&W'}</div>
@@ -338,9 +411,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="film-discipline">
-              {DISCIPLINES[state.intent]}
-            </div>
+            {state.intent && (
+              <div className="film-discipline">
+                {DISCIPLINES[state.intent]}
+              </div>
+            )}
           </div>
 
           {/* Exposure Settings */}
@@ -376,57 +451,157 @@ export default function Home() {
           {/* Spacer */}
           <div className="spacer" />
 
-          {/* Lock Button */}
-          <Button onClick={lockRoll}>
-            Lock this roll
+          {/* Load Button */}
+          <Button onClick={loadRoll}>
+            Load this roll
           </Button>
         </div>
       )}
 
-      {/* Locked Screen */}
-      {screen === 'locked' && state.recommendation && state.locked && state.intent && (
+      {/* Active Roll Screen */}
+      {screen === 'active' && state.recommendation && state.active && (
         <div className="screen">
           {/* Header Row */}
           <div className="screen-header-row">
-            <span className="locked-meta">
-              Roll {formatRollNumber(state.rollNumber || 1)}
-            </span>
-            <span className="locked-meta">
-              {state.lockedAt ? formatDate(new Date(state.lockedAt)) : ''}
+            <button onClick={goBack} className="back-link">
+              ← Back
+            </button>
+            <span className="active-roll-meta">
+              Roll {formatRollNumber(state.rollNumber || 1)} · {state.loadedAt ? formatDate(new Date(state.loadedAt)) : ''}
             </span>
           </div>
 
           {/* Hero */}
-          <div className="locked-hero">
-            <div className="locked-film-name">
+          <div className="active-roll-hero">
+            <div className="active-roll-film-name">
               {state.recommendation.film}
             </div>
-            <div className="locked-film-ei">
+            <div className="active-roll-film-ei">
               ISO {state.recommendation.ei}
             </div>
           </div>
 
-          {/* Guidance */}
-          <div className="locked-guidance">
-            <div className="locked-guidance-text">
+          {/* Frame Counter */}
+          <FrameCounter
+            currentFrame={state.currentFrame}
+            totalFrames={state.totalFrames}
+            hasLog={!!getFrameLog(state.currentFrame)}
+            onAdvance={advanceFrame}
+            onPrevious={previousFrame}
+            onTotalFramesChange={setTotalFrames}
+            onLogFrame={() => setShowFrameLog(true)}
+            format={state.filmFormat}
+          />
+
+          {/* Frame Log Drawer - inline expansion */}
+          {showFrameLog && (
+            <FrameLogModal
+              frameNumber={state.currentFrame}
+              existingLog={getFrameLog(state.currentFrame)}
+              onSave={(data) => {
+                logFrame(data);
+                setShowFrameLog(false);
+              }}
+              onClose={() => setShowFrameLog(false)}
+            />
+          )}
+
+          {/* Exposure Approach */}
+          <div className="active-roll-guidance">
+            <div className="active-roll-guidance-text">
               {state.recommendation.exposure}
             </div>
           </div>
 
-          {/* Discipline */}
-          <div className="locked-discipline">
-            &quot;{DISCIPLINES[state.intent]}&quot;
-          </div>
+          {/* Current Weather - live conditions for mid-roll reference */}
+          <WeatherDisplay
+            weather={currentWeather}
+            loading={weatherLoading}
+            error={weatherError}
+            locationDenied={locationDenied}
+            onManualLocation={setManualLocation}
+          />
+
+          {/* Exposure Settings - contextual to current conditions */}
+          {(() => {
+            const exposure = getExposureGuidance(state.light, state.recommendation.ei, state.environment, currentWeather);
+            return (
+              <GuidanceCard
+                icon={<ExposureIcon className="w-full h-full" />}
+                title="Exposure Settings"
+                note={exposure.note}
+              >
+                <GuidanceRow label="Aperture" value={exposure.aperture} />
+                <GuidanceRow label="Shutter" value={exposure.shutter} />
+                <GuidanceRow label="ISO" value={state.recommendation.ei.toString()} />
+              </GuidanceCard>
+            );
+          })()}
+
+          {/* Metering Tips */}
+          {(() => {
+            const metering = getMeteringTips(state.light, state.environment, state.intent, currentWeather);
+            return (
+              <GuidanceCard
+                icon={<MeteringIcon className="w-full h-full" />}
+                title="Metering Tips"
+              >
+                <MeteringTip>{metering.primary}</MeteringTip>
+                <MeteringTip secondary>{metering.secondary}</MeteringTip>
+              </GuidanceCard>
+            );
+          })()}
+
+          {/* Discipline - only if intent was specified */}
+          {state.intent && (
+            <div className="active-roll-discipline">
+              &quot;{DISCIPLINES[state.intent]}&quot;
+            </div>
+          )}
 
           {/* Spacer */}
           <div className="spacer" />
 
-          {/* Start Over Button */}
-          <Button variant="secondary" onClick={startOver}>
-            New roll
-          </Button>
+          {/* Export Button - only show if frames logged */}
+          {state.frameLog.length > 0 && (
+            <div className="export-section">
+              <div className="export-label">
+                {state.frameLog.length} frame{state.frameLog.length !== 1 ? 's' : ''} logged
+              </div>
+              <div className="export-buttons">
+                {canShare() ? (
+                  <button className="export-btn" onClick={handleShare}>
+                    Share
+                  </button>
+                ) : null}
+                <button className="export-btn" onClick={handleExportCSV}>
+                  CSV
+                </button>
+                <button className="export-btn" onClick={handleExportJSON}>
+                  JSON
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="active-roll-actions">
+            <Button onClick={finishRoll}>
+              Finish roll
+            </Button>
+            <Button variant="secondary" onClick={changeFilm}>
+              Pick a different film
+            </Button>
+          </div>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <a href="/changelog" className="footer-link">v1.2</a>
+        <span>·</span>
+        <a href="https://owenfisher.co/" target="_blank" rel="noopener noreferrer" className="footer-link">Made by Owen</a>
+      </footer>
     </main>
   );
 }

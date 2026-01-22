@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { WeatherData } from '@/lib/types';
 
 interface WeatherDisplayProps {
   weather: WeatherData | null;
   loading?: boolean;
   error?: string | null;
+  locationDenied?: boolean;
+  onManualLocation?: (lat: number, lon: number) => void;
 }
 
 function VisibilityIcon() {
@@ -25,7 +28,42 @@ function LiveLED() {
   );
 }
 
-export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps) {
+// Common cities for quick selection
+const QUICK_LOCATIONS = [
+  { name: 'London', lat: 51.5074, lon: -0.1278 },
+  { name: 'New York', lat: 40.7128, lon: -74.0060 },
+  { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+  { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
+];
+
+export function WeatherDisplay({ weather, loading, error, locationDenied, onManualLocation }: WeatherDisplayProps) {
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [customLocation, setCustomLocation] = useState('');
+
+  const handleQuickLocation = (lat: number, lon: number) => {
+    onManualLocation?.(lat, lon);
+    setShowLocationPicker(false);
+  };
+
+  const handleCustomSubmit = async () => {
+    if (!customLocation.trim()) return;
+
+    // Try to geocode the location using a simple approach
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(customLocation)}&limit=1`
+      );
+      const data = await response.json();
+      if (data && data[0]) {
+        onManualLocation?.(parseFloat(data[0].lat), parseFloat(data[0].lon));
+        setShowLocationPicker(false);
+        setCustomLocation('');
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="weather-card">
@@ -39,7 +77,64 @@ export function WeatherDisplay({ weather, loading, error }: WeatherDisplayProps)
     );
   }
 
-  if (error) {
+  if (locationDenied && onManualLocation) {
+    return (
+      <div className="weather-card">
+        {!showLocationPicker ? (
+          <div className="weather-location-prompt">
+            <div className="guidance-label">Location access denied</div>
+            <button
+              className="weather-location-btn"
+              onClick={() => setShowLocationPicker(true)}
+            >
+              Enter Location Manually
+            </button>
+          </div>
+        ) : (
+          <div className="weather-location-picker">
+            <div className="weather-location-picker-header">
+              <span className="guidance-label">Select or enter location</span>
+              <button
+                className="weather-location-close"
+                onClick={() => setShowLocationPicker(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="weather-quick-locations">
+              {QUICK_LOCATIONS.map(loc => (
+                <button
+                  key={loc.name}
+                  className="weather-quick-location"
+                  onClick={() => handleQuickLocation(loc.lat, loc.lon)}
+                >
+                  {loc.name}
+                </button>
+              ))}
+            </div>
+            <div className="weather-custom-location">
+              <input
+                type="text"
+                className="weather-location-input"
+                placeholder="City or address..."
+                value={customLocation}
+                onChange={(e) => setCustomLocation(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
+              />
+              <button
+                className="weather-location-submit"
+                onClick={handleCustomSubmit}
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (error && !locationDenied) {
     return (
       <div className="weather-card">
         <div className="guidance-label">

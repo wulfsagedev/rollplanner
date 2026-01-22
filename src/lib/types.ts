@@ -100,9 +100,14 @@ export interface AppState {
   recommendation: Recommendation | null;
 
   // Roll tracking
-  locked: boolean;
+  active: boolean;
   rollNumber: number | null;
-  lockedAt: string | null;
+  loadedAt: string | null;
+
+  // Frame tracking (Phase 2)
+  currentFrame: number;
+  totalFrames: RollFrameCount;
+  frameLog: FrameLog[];
 }
 
 export interface SelectorOption {
@@ -110,3 +115,17 @@ export interface SelectorOption {
   label: string;
   icon: React.ReactNode;
 }
+
+// ============================================
+// SHOT LOGGING TYPES
+// ============================================
+
+export interface FrameLog {
+  frameNumber: number;
+  aperture: string | null;
+  shutter: string | null;
+  notes: string | null;
+  timestamp: string; // ISO string
+}
+
+export type RollFrameCount = 12 | 16 | 24 | 36;

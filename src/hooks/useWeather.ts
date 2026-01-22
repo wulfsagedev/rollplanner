@@ -8,7 +8,9 @@ interface UseWeatherResult {
   weather: WeatherData | null;
   loading: boolean;
   error: string | null;
+  locationDenied: boolean;
   refresh: () => void;
+  setManualLocation: (lat: number, lon: number) => void;
 }
 
 // Minimum distance (meters) to trigger a weather update
@@ -39,6 +41,7 @@ export function useWeather(): UseWeatherResult {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
 
   const lastFetchRef = useRef<{ lat: number; lon: number; time: number } | null>(null);
   const watchIdRef = useRef<number | null>(null);
@@ -75,12 +78,22 @@ export function useWeather(): UseWeatherResult {
   const refresh = useCallback(() => {
     if (lastFetchRef.current) {
       fetchWeatherData(lastFetchRef.current.lat, lastFetchRef.current.lon, true);
-    } else if (navigator.geolocation) {
+    } else if (navigator.geolocation && !locationDenied) {
       navigator.geolocation.getCurrentPosition(
         (pos) => fetchWeatherData(pos.coords.latitude, pos.coords.longitude, true),
-        () => setError('Location access denied')
+        () => {
+          setLocationDenied(true);
+          setError('Location access denied');
+        }
       );
     }
+  }, [fetchWeatherData, locationDenied]);
+
+  const setManualLocation = useCallback((lat: number, lon: number) => {
+    setLocationDenied(false);
+    setError(null);
+    setLoading(true);
+    fetchWeatherData(lat, lon, true);
   }, [fetchWeatherData]);
 
   useEffect(() => {
@@ -97,7 +110,8 @@ export function useWeather(): UseWeatherResult {
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
-          setError('Enable location for weather');
+          setLocationDenied(true);
+          setError('Location access denied');
         } else {
           setError('Unable to get location');
         }
@@ -136,6 +150,8 @@ export function useWeather(): UseWeatherResult {
     weather,
     loading,
     error,
-    refresh
+    locationDenied,
+    refresh,
+    setManualLocation
   };
 }
