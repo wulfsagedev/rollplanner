@@ -64,19 +64,7 @@ export function WeatherDisplay({ weather, loading, error, locationDenied, onManu
     }
   };
 
-  if (loading) {
-    return (
-      <div className="weather-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ height: 10, width: 80, background: 'rgba(255,255,255,0.2)', borderRadius: 3 }} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Check locationDenied FIRST - show manual entry immediately when denied
   if (locationDenied && onManualLocation) {
     return (
       <div className="weather-card">
@@ -139,6 +127,20 @@ export function WeatherDisplay({ weather, loading, error, locationDenied, onManu
       <div className="weather-card">
         <div className="guidance-label">
           {error}
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading skeleton while fetching (only if not denied)
+  if (loading) {
+    return (
+      <div className="weather-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 10, width: 80, background: 'rgba(255,255,255,0.2)', borderRadius: 3 }} />
+          </div>
         </div>
       </div>
     );
