@@ -328,13 +328,13 @@ export default function Home() {
                 disabled={!canGetRecommendation}
                 pulse={canGetRecommendation}
               >
-                Plan Roll
+                Recommend a Film
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setShowFilmPicker(true)}
               >
-                I have this film
+                I Already Have Film
               </Button>
             </div>
           ) : (

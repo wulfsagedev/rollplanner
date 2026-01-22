@@ -71,7 +71,7 @@ export function FilmPicker({ filmType, filmFormat, onSelectFilm, onCancel }: Fil
   return (
     <div className="film-picker">
       <div className="film-picker-header">
-        <h2 className="film-picker-title">I have this film</h2>
+        <h2 className="film-picker-title">Select Your Film</h2>
         <button onClick={onCancel} className="film-picker-close" aria-label="Close">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
